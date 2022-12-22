@@ -7,18 +7,18 @@ import java.util.List;
 
 public class Day2 {
 
-    private final List<String> input;
+    private final List<Box> input;
 
     public Day2() throws IOException {
         input = Input.day2();
     }
 
     long part1() {
-        return 0L;
+        return input.stream().mapToLong(Box::getPaperArea).sum();
     }
 
     long part2() {
-        return 0L;
+        return input.stream().mapToLong(Box::getRibbonLength).sum();
     }
 
 

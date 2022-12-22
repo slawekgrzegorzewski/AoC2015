@@ -14,11 +14,24 @@ public class Day1 {
     }
 
     long part1() {
-        return 0L;
+        long floor = 0L;
+        for (char c : input.get(0).toCharArray()) {
+            if (c == '(') floor++;
+            if (c == ')') floor--;
+        }
+        return floor;
     }
 
     long part2() {
-        return 0L;
+        long floor = 0L;
+        char[] chars = input.get(0).toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            char c = chars[i];
+            if (c == '(') floor++;
+            if (c == ')') floor--;
+            if(floor == -1)return i + 1;
+        }
+        throw new RuntimeException();
     }
 }
 
