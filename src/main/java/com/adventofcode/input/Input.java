@@ -23,8 +23,8 @@ public class Input {
         return String.join("", getInputFromFile("/day3"));
     }
 
-    public static List<String> day4() throws IOException {
-        return getInputFromFile("/day4");
+    public static String day4() throws IOException {
+        return String.join("", getInputFromFile("/day4"));
     }
 
     public static List<String> day5() throws IOException {
