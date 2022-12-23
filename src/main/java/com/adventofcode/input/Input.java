@@ -19,8 +19,8 @@ public class Input {
         return getInputFromFile("/day2").stream().map(Box::parse).collect(Collectors.toList());
     }
 
-    public static List<String> day3() throws IOException {
-        return getInputFromFile("/day3");
+    public static String day3() throws IOException {
+        return String.join("", getInputFromFile("/day3"));
     }
 
     public static List<String> day4() throws IOException {
