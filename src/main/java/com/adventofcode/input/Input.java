@@ -1,11 +1,13 @@
 package com.adventofcode.input;
 
 import com.adventofcode.Box;
+import com.google.common.base.Splitter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -63,8 +65,17 @@ public class Input {
         return getInputFromFile("/day8");
     }
 
-    public static List<String> day9() throws IOException {
-        return getInputFromFile("/day9");
+    public static Map<StringPair, Integer> day9() throws IOException {
+        return getInputFromFile("/day9")
+                .stream()
+                .map(Splitter.on(" = ").trimResults().omitEmptyStrings()::splitToList)
+                .collect(Collectors.toMap(
+                        parts -> {
+                            List<String> locations = Splitter.on(" to ").trimResults().omitEmptyStrings().splitToList(parts.getFirst());
+                            return new StringPair(locations.getFirst(), locations.getLast());
+                        },
+                        parts -> Integer.parseInt(parts.getLast())
+                ));
     }
 
     public static List<String> day10() throws IOException {
@@ -138,5 +149,8 @@ public class Input {
     }
 
     public record LitInstruction(String operation, int leftTopX, int leftTopY, int rightDownX, int rightDownY) {
+    }
+
+    public record StringPair(String first, String second){
     }
 }
