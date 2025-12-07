@@ -31,8 +31,28 @@ public class Input {
         return getInputFromFile("/day5");
     }
 
-    public static List<String> day6() throws IOException {
-        return getInputFromFile("/day6");
+    public static List<LitInstruction> day6() throws IOException {
+        return getInputFromFile("/day6").
+                stream()
+                .map(line -> {
+                    String operation;
+                    if (line.startsWith("turn on")) operation = "turn on";
+                    else if (line.startsWith("turn off")) operation = "turn off";
+                    else if (line.startsWith("toggle")) operation = "toggle";
+                    else throw new IllegalStateException("Unknown operation: " + line);
+                    line = line.replace(operation + " ", "");
+                    String[] parts = line.split(" through ");
+                    String[] leftTopParts = parts[0].split(",");
+                    String[] rightDownParts = parts[1].split(",");
+                    return new LitInstruction(
+                            operation,
+                            Integer.parseInt(leftTopParts[0]),
+                            Integer.parseInt(leftTopParts[1]),
+                            Integer.parseInt(rightDownParts[0]),
+                            Integer.parseInt(rightDownParts[1])
+                    );
+                })
+                .toList();
     }
 
     public static List<String> day7() throws IOException {
@@ -115,5 +135,8 @@ public class Input {
         try (InputStreamReader in = new InputStreamReader(Objects.requireNonNull(Input.class.getResourceAsStream(resourceName))); BufferedReader reader = new BufferedReader(in)) {
             return reader.lines().collect(Collectors.toList());
         }
+    }
+
+    public record LitInstruction(String operation, int leftTopX, int leftTopY, int rightDownX, int rightDownY) {
     }
 }

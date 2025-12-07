@@ -7,19 +7,14 @@ version = "0.0.1-SNAPSHOT"
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+        languageVersion.set(JavaLanguageVersion.of(25))
     }
 }
 
-testing {
-    suites {
-        configureEach {
-            if (this is JvmTestSuite) {
-                useJUnitJupiter()
-            }
-        }
-    }
+tasks.test {
+    useJUnitPlatform()
 }
+
 group = "org.example"
 version = "1.0-SNAPSHOT"
 
@@ -28,11 +23,10 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jetbrains:annotations:20.1.0")
-    implementation("com.google.guava:guava:31.1-jre")
+    implementation("org.jetbrains:annotations:26.0.2-1")
+    implementation("com.google.guava:guava:33.5.0-jre")
 
-    testImplementation ("org.junit.jupiter:junit-jupiter-api:5.7.2")
-    testImplementation ("org.junit.jupiter:junit-jupiter-params:5.7.2")
-    testRuntimeOnly ("org.junit.jupiter:junit-jupiter-engine:5.7.2")
-    testRuntimeOnly ("org.junit.jupiter:junit-jupiter-engine:5.7.2")
+    testImplementation(platform("org.junit:junit-bom:6.0.1"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
