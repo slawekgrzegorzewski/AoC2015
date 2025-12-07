@@ -18,11 +18,15 @@ class Day14Test {
 
     @Test
     void testPart1() throws IOException {
-        assertEquals(0L, day14.part1());
+        long part1 = day14.part1();
+        System.out.println("part1 = " + part1);
+        assertEquals(2696L, part1);
     }
 
     @Test
     void testPart2() throws IOException {
-        assertEquals(0L, day14.part2());
+        long part2 = day14.part2();
+        System.out.println("part2 = " + part2);
+        assertEquals(1084L, part2);
     }
 }

@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Input {
@@ -110,8 +111,21 @@ public class Input {
         return input;
     }
 
-    public static List<String> day14() throws IOException {
-        return getInputFromFile("/day14");
+    public static List<Reindeer> day14() throws IOException {
+        Pattern pattern = Pattern.compile("([A-Za-z]+) can fly ([0-9]+) km/s for ([0-9]+) seconds, but then must rest for ([0-9]+) seconds.");
+        return getInputFromFile("/day14")
+                .stream()
+                .map(pattern::matcher)
+                .map(matcher -> {
+                    if (!matcher.find()) throw new IllegalStateException();
+                    return new Reindeer(
+                            matcher.group(1),
+                            Integer.parseInt(matcher.group(2)),
+                            Integer.parseInt(matcher.group(3)),
+                            Integer.parseInt(matcher.group(4))
+                    );
+                })
+                .toList();
     }
 
     public static List<String> day15() throws IOException {
@@ -168,5 +182,8 @@ public class Input {
     }
 
     public record StringPair(String first, String second) {
+    }
+
+    public record Reindeer(String name, int speed, int flyTime, int restTime) {
     }
 }
