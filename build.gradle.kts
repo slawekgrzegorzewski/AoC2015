@@ -23,8 +23,9 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jetbrains:annotations:26.0.2-1")
+    implementation("com.google.code.gson:gson:2.13.2")
     implementation("com.google.guava:guava:33.5.0-jre")
+    implementation("org.jetbrains:annotations:26.0.2-1")
 
     testImplementation(platform("org.junit:junit-bom:6.0.1"))
     testImplementation("org.junit.jupiter:junit-jupiter")
