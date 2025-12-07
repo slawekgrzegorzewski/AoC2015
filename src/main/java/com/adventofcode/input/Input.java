@@ -6,6 +6,7 @@ import com.google.common.base.Splitter;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -90,8 +91,23 @@ public class Input {
         return getInputFromFile("/day12").getFirst();
     }
 
-    public static List<String> day13() throws IOException {
-        return getInputFromFile("/day13");
+    public static Map<StringPair, Integer> day13() throws IOException {
+        Map<StringPair, Integer> input = new HashMap<>();
+        getInputFromFile("/day13")
+                .forEach(line -> {
+                    String[] whoEffectParts;
+                    int effect;
+                    if (line.contains("would gain")) {
+                        whoEffectParts = line.split(" would gain ");
+                        effect = 1;
+                    } else {
+                        whoEffectParts = line.split(" would lose ");
+                        effect = -1;
+                    }
+                    String[] pointsWhoParts = whoEffectParts[1].split(" happiness units by sitting next to ");
+                    input.put(new StringPair(whoEffectParts[0], pointsWhoParts[1].replace(".", "")), effect * Integer.parseInt(pointsWhoParts[0]));
+                });
+        return input;
     }
 
     public static List<String> day14() throws IOException {
@@ -151,6 +167,6 @@ public class Input {
     public record LitInstruction(String operation, int leftTopX, int leftTopY, int rightDownX, int rightDownY) {
     }
 
-    public record StringPair(String first, String second){
+    public record StringPair(String first, String second) {
     }
 }
