@@ -147,8 +147,26 @@ public class Input {
                 .toList();
     }
 
-    public static List<String> day16() throws IOException {
-        return getInputFromFile("/day16");
+    public static List<AuntSue> day16() throws IOException {
+        return getInputFromFile("/day16")
+                .stream()
+                .map(line -> {
+                    String suePart = line.substring(0, line.indexOf(":"));
+                    String propertiesPart = line.substring(line.indexOf(":") + 1).trim();
+                    Map<String, Integer> prpperties = Splitter.on(", ")
+                            .trimResults()
+                            .omitEmptyStrings()
+                            .splitToStream(propertiesPart)
+                            .collect(Collectors.toMap(
+                                    part -> part.substring(0, part.indexOf(":")),
+                                    part -> Integer.parseInt(part.substring(part.indexOf(":") + 1).trim())
+                            ));
+                    return new AuntSue(
+                            Integer.parseInt(suePart.replace("Sue ", "")),
+                            prpperties
+                    );
+                })
+                .toList();
     }
 
     public static List<String> day17() throws IOException {
@@ -203,5 +221,9 @@ public class Input {
     }
 
     public record Ingredient(String name, int capacity, int durability, int flavor, int texture, int calories) {
+    }
+
+    public record AuntSue(int id, Map<String, Integer> properties) {
+
     }
 }
