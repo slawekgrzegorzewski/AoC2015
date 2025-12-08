@@ -176,8 +176,11 @@ public class Input {
                 .toList();
     }
 
-    public static List<String> day18() throws IOException {
-        return getInputFromFile("/day18");
+    public static char[][] day18() throws IOException {
+        return getInputFromFile("/day18")
+                .stream()
+                .map(String::toCharArray)
+                .toArray(char[][]::new);
     }
 
     public static List<String> day19() throws IOException {
