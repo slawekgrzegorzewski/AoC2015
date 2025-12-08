@@ -128,8 +128,23 @@ public class Input {
                 .toList();
     }
 
-    public static List<String> day15() throws IOException {
-        return getInputFromFile("/day15");
+    public static List<Ingredient> day15() throws IOException {
+        Pattern pattern = Pattern.compile("([A-Za-z]+): capacity ([-]*[0-9]+), durability ([-]*[0-9]+), flavor ([-]*[0-9]+), texture ([-]*[0-9]+), calories ([-]*[0-9]+)");
+        return getInputFromFile("/day15")
+                .stream()
+                .map(pattern::matcher)
+                .map(matcher -> {
+                    if (!matcher.find()) throw new IllegalStateException();
+                    return new Ingredient(
+                            matcher.group(1),
+                            Integer.parseInt(matcher.group(2)),
+                            Integer.parseInt(matcher.group(3)),
+                            Integer.parseInt(matcher.group(4)),
+                            Integer.parseInt(matcher.group(5)),
+                            Integer.parseInt(matcher.group(6))
+                    );
+                })
+                .toList();
     }
 
     public static List<String> day16() throws IOException {
@@ -185,5 +200,8 @@ public class Input {
     }
 
     public record Reindeer(String name, int speed, int flyTime, int restTime) {
+    }
+
+    public record Ingredient(String name, int capacity, int durability, int flavor, int texture, int calories) {
     }
 }
