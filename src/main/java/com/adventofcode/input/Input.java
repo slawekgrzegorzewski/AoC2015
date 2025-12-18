@@ -6,10 +6,7 @@ import com.google.common.base.Splitter;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -183,8 +180,42 @@ public class Input {
                 .toArray(char[][]::new);
     }
 
-    public static List<String> day19() throws IOException {
-        return getInputFromFile("/day19");
+    public static FusionPlantInput day19() throws IOException {
+        List<String> inputFromFile = getInputFromFile("/day19");
+        Map<Integer, List<List<Integer>>> replacements = new HashMap<>();
+        Set<String> basicMolecules = new HashSet<>();
+        for (int i = 0; i < inputFromFile.size() - 2; i++) {
+            String[] replacementParts = inputFromFile.get(i).split(" => ");
+            basicMolecules.addAll(new HashSet<>(findBasicMoleculesIn(replacementParts[0])));
+            basicMolecules.addAll(new HashSet<>(findBasicMoleculesIn(replacementParts[1])));
+        }
+        Map<String, Integer> basicMoleculesMap = new HashMap<>();
+        basicMolecules.stream().sorted().forEach(molecule -> basicMoleculesMap.put(molecule, basicMoleculesMap.size()));
+        for (int i = 0; i < inputFromFile.size() - 2; i++) {
+            String[] replacementParts = inputFromFile.get(i).split(" => ");
+            replacements.computeIfAbsent(basicMoleculesMap.get(replacementParts[0]), _ -> new ArrayList<>())
+                    .add(findBasicMoleculesIn(replacementParts[1]).stream().map(basicMoleculesMap::get).toList());
+        }
+        return new FusionPlantInput(
+                basicMoleculesMap,
+                replacements,
+                findBasicMoleculesIn(inputFromFile.getLast()).stream().map(basicMoleculesMap::get).toList());
+    }
+
+    private static List<String> findBasicMoleculesIn(String molecule) {
+        char[] charArray = molecule.toCharArray();
+        List<String> basicMolecules = new ArrayList<>();
+        StringBuilder sb = new StringBuilder();
+        for (char c : charArray) {
+            if ('Z' >= c && c >= 'A' && !sb.isEmpty()) {
+                basicMolecules.add(sb.toString());
+                sb = new StringBuilder().append(c);
+            } else {
+                sb.append(c);
+            }
+        }
+        basicMolecules.add(sb.toString());
+        return basicMolecules;
     }
 
     public static List<String> day20() throws IOException {
@@ -230,6 +261,10 @@ public class Input {
     }
 
     public record AuntSue(int id, Map<String, Integer> properties) {
+    }
 
+    public record FusionPlantInput(Map<String, Integer> basicMolecules,
+                                   Map<Integer, List<List<Integer>>> replacements,
+                                   List<Integer> moleculeToProduce) {
     }
 }
