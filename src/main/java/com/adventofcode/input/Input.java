@@ -190,7 +190,9 @@ public class Input {
             basicMolecules.addAll(new HashSet<>(findBasicMoleculesIn(replacementParts[1])));
         }
         Map<String, Integer> basicMoleculesMap = new HashMap<>();
+        Map<Integer, String> basicMoleculesIndexes = new HashMap<>();
         basicMolecules.stream().sorted().forEach(molecule -> basicMoleculesMap.put(molecule, basicMoleculesMap.size()));
+        basicMoleculesMap.forEach((molecule, index) -> basicMoleculesIndexes.put(index, molecule));
         for (int i = 0; i < inputFromFile.size() - 2; i++) {
             String[] replacementParts = inputFromFile.get(i).split(" => ");
             replacements.computeIfAbsent(basicMoleculesMap.get(replacementParts[0]), _ -> new ArrayList<>())
@@ -198,6 +200,7 @@ public class Input {
         }
         return new FusionPlantInput(
                 basicMoleculesMap,
+                basicMoleculesIndexes,
                 replacements,
                 findBasicMoleculesIn(inputFromFile.getLast()).stream().map(basicMoleculesMap::get).toList());
     }
@@ -264,6 +267,7 @@ public class Input {
     }
 
     public record FusionPlantInput(Map<String, Integer> basicMolecules,
+                                   Map<Integer, String> basicMoleculesIndexes,
                                    Map<Integer, List<List<Integer>>> replacements,
                                    List<Integer> moleculeToProduce) {
     }
