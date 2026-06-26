@@ -150,7 +150,7 @@ public class Input {
                 .map(line -> {
                     String suePart = line.substring(0, line.indexOf(":"));
                     String propertiesPart = line.substring(line.indexOf(":") + 1).trim();
-                    Map<String, Integer> prpperties = Splitter.on(", ")
+                    Map<String, Integer> properties = Splitter.on(", ")
                             .trimResults()
                             .omitEmptyStrings()
                             .splitToStream(propertiesPart)
@@ -160,7 +160,7 @@ public class Input {
                             ));
                     return new AuntSue(
                             Integer.parseInt(suePart.replace("Sue ", "")),
-                            prpperties
+                            properties
                     );
                 })
                 .toList();
