@@ -218,8 +218,8 @@ public class Input {
         return basicMolecules;
     }
 
-    public static List<String> day20() throws IOException {
-        return getInputFromFile("/day20");
+    public static int day20() throws IOException {
+        return Integer.parseInt(getInputFromFile("/day20").getFirst());
     }
 
     public static List<String> day21() throws IOException {
