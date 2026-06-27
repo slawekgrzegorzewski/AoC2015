@@ -222,8 +222,13 @@ public class Input {
         return Integer.parseInt(getInputFromFile("/day20").getFirst());
     }
 
-    public static List<String> day21() throws IOException {
-        return getInputFromFile("/day21");
+    public static Stats day21() throws IOException {
+        List<String> inputFromFile = getInputFromFile("/day21");
+        return new Stats(
+                Integer.parseInt(inputFromFile.get(0).split(": ")[1]),
+                Integer.parseInt(inputFromFile.get(1).split(": ")[1]),
+                Integer.parseInt(inputFromFile.get(2).split(": ")[1])
+        );
     }
 
     public static List<String> day22() throws IOException {
@@ -266,5 +271,8 @@ public class Input {
     public record FusionPlantInput(Map<String, Integer> basicMolecules,
                                    Map<Integer, List<List<Integer>>> replacements,
                                    List<Integer> moleculeToProduce) {
+    }
+
+    public record Stats(int hitPoints, int damage, int armor) {
     }
 }

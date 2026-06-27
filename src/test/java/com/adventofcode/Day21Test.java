@@ -18,11 +18,11 @@ class Day21Test {
 
     @Test
     void testPart1() throws IOException {
-        assertEquals(0L, day21.part1());
+        assertEquals(111L, day21.part1());
     }
 
     @Test
     void testPart2() throws IOException {
-        assertEquals(0L, day21.part2());
+        assertEquals(188L, day21.part2());
     }
 }

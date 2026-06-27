@@ -4,6 +4,8 @@ import com.adventofcode.input.Input;
 
 import java.io.IOException;
 
+import static com.adventofcode.Utils.divideIntsAndCeil;
+
 public class Day20 {
 
     private final int expectedNumberOfPresents;
@@ -28,10 +30,6 @@ public class Day20 {
                         50,
                         11,
                         divideIntsAndCeil(expectedNumberOfPresents, 11)));
-    }
-
-    private int divideIntsAndCeil(int dividend, int divisor) {
-        return (dividend + divisor - 1) / divisor;
     }
 
     private static int findLowestHouseNumberWithNumberOfPresentsBiggerOrEqualTo(int expectedNumberOfPresents, int[] presentsSum) {
