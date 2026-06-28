@@ -231,8 +231,13 @@ public class Input {
         );
     }
 
-    public static List<String> day22() throws IOException {
-        return getInputFromFile("/day22");
+    public static Stats day22() throws IOException {
+        List<String> inputFromFile = getInputFromFile("/day22");
+        return new Stats(
+                Integer.parseInt(inputFromFile.get(0).split(": ")[1]),
+                Integer.parseInt(inputFromFile.get(1).split(": ")[1]),
+                0
+        );
     }
 
     public static List<String> day23() throws IOException {
