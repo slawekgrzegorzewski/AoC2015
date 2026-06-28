@@ -5,7 +5,6 @@ import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class Day22 {
 
@@ -37,10 +36,16 @@ public class Day22 {
 
     private int checkAllGamesVariants(boolean looseOneHPOnPlayerTurn) {
         final Set<GameStateNode> allNodes = new HashSet<>();
-        final GameStateNode winNode = new GameStateNode(null, List.of(), false, new AtomicInteger(0));
-        final GameStateNode looseNode = new GameStateNode(null, List.of(), false, new AtomicInteger(0));
-        final GameState initialGameState = new GameState(bossStats, new Input.Stats(50, 0, 0), 500, Map.of());
-        final GameStateNode initialNode = new GameStateNode(initialGameState, new ArrayList<>(), true, new AtomicInteger(0));
+        final GameStateNode winNode = new GameStateNode(null, false, 0);
+        final GameStateNode looseNode = new GameStateNode(null, false, 0);
+        final GameStateNode initialNode = new GameStateNode(
+                new GameState(
+                        bossStats,
+                        new Input.Stats(50, 0, 0),
+                        500,
+                        Map.of()),
+                true,
+                0);
         allNodes.add(winNode);
         allNodes.add(looseNode);
         allNodes.add(initialNode);
@@ -54,8 +59,8 @@ public class Day22 {
                 if (node.gameState.gameOver()) {
                     node.children().clear();
                     if (node.gameState.playerWon()) {
-                        if (winNode.manaCost().intValue() == 0 || node.manaCost().intValue() < winNode.manaCost().intValue())
-                            winNode.manaCost().set(node.manaCost().intValue());
+                        if (winNode.manaCost() == 0 || node.manaCost() < winNode.manaCost())
+                            winNode.manaCost(node.manaCost());
                         node.children().add(winNode);
                     } else {
                         node.children().add(looseNode);
@@ -67,7 +72,7 @@ public class Day22 {
                     } else {
                         possibleSpells.forEach(spellName -> {
                             int manaCost = spells.get(spellName).manaCost();
-                            GameStateNode newNode = new GameStateNode(node.gameState.performTurn(spellName, looseOneHPOnPlayerTurn), new ArrayList<>(), false, new AtomicInteger(node.manaCost().intValue() + manaCost));
+                            GameStateNode newNode = new GameStateNode(node.gameState.performTurn(spellName, looseOneHPOnPlayerTurn), false, node.manaCost() + manaCost);
                             if (allNodes.contains(newNode)) return;
                             allNodes.add(newNode);
                             nodesForNextRound.add(newNode);
@@ -75,7 +80,7 @@ public class Day22 {
                         });
                     }
                 } else {
-                    GameStateNode newNode = new GameStateNode(node.gameState.performTurn(null, looseOneHPOnPlayerTurn), new ArrayList<>(), true, new AtomicInteger(node.manaCost().intValue()));
+                    GameStateNode newNode = new GameStateNode(node.gameState.performTurn(null, looseOneHPOnPlayerTurn), true, node.manaCost());
                     if (allNodes.contains(newNode)) return;
                     allNodes.add(newNode);
                     nodesForNextRound.add(newNode);
@@ -83,11 +88,34 @@ public class Day22 {
                 }
             });
         }
-        return winNode.manaCost().intValue();
+        return winNode.manaCost();
     }
 
-    private record GameStateNode(GameState gameState, List<GameStateNode> children, boolean playerTurn,
-                                 AtomicInteger manaCost) {
+    private static final class GameStateNode {
+        private final GameState gameState;
+        private final List<GameStateNode> children;
+        private final boolean playerTurn;
+        private int manaCost;
+
+        private GameStateNode(GameState gameState, boolean playerTurn, int manaCost) {
+            this.gameState = gameState;
+            this.children = new ArrayList<>();
+            this.playerTurn = playerTurn;
+            this.manaCost = manaCost;
+        }
+
+        public List<GameStateNode> children() {
+            return children;
+        }
+
+        public int manaCost() {
+            return manaCost;
+        }
+
+        public void manaCost(int manaCost) {
+            this.manaCost = manaCost;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (o == null || getClass() != o.getClass()) return false;
@@ -99,6 +127,7 @@ public class Day22 {
         public int hashCode() {
             return Objects.hash(gameState, children, playerTurn);
         }
+
     }
 
     private record Effect(int turns, int armorBonus, int damage, int manaBonus) {
