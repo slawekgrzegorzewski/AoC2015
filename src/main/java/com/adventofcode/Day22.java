@@ -1,6 +1,7 @@
 package com.adventofcode;
 
 import com.adventofcode.input.Input;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.util.*;
@@ -14,12 +15,6 @@ public class Day22 {
     private static final Effect SHIELD_EFFECT = new Effect(6, 7, 0, 0);
     private static final Effect POISON_EFFECT = new Effect(6, 0, 3, 0);
     private static final Effect RECHARGE_EFFECT = new Effect(5, 0, 0, 101);
-    private static final Map<Effect, String> effectNames = Map.of(
-            EMPTY_EFFECT, "no effect",
-            SHIELD_EFFECT, "Shield",
-            POISON_EFFECT, "Poison",
-            RECHARGE_EFFECT, "Recharge"
-    );
     private static final Map<String, Spell> spells = Map.of(
             "Magic Missile", new Spell("Magic Missile", 53, 4, 0, EMPTY_EFFECT),
             "Drain", new Spell("Drain", 73, 2, 2, EMPTY_EFFECT),
@@ -51,7 +46,7 @@ public class Day22 {
         allNodes.add(initialNode);
         Set<GameStateNode> nodesForNextRound = new HashSet<>();
         nodesForNextRound.add(initialNode);
-        do {
+        while (!nodesForNextRound.isEmpty()) {
             Set<GameStateNode> workingNodes = new HashSet<>(nodesForNextRound);
             nodesForNextRound.clear();
             workingNodes.forEach(node -> {
@@ -72,7 +67,7 @@ public class Day22 {
                     } else {
                         possibleSpells.forEach(spellName -> {
                             int manaCost = spells.get(spellName).manaCost();
-                            GameStateNode newNode = new GameStateNode(node.gameState.performTurn(spellName, looseOneHPOnPlayerTurn, false), new ArrayList<>(), false, new AtomicInteger(node.manaCost().intValue() + manaCost));
+                            GameStateNode newNode = new GameStateNode(node.gameState.performTurn(spellName, looseOneHPOnPlayerTurn), new ArrayList<>(), false, new AtomicInteger(node.manaCost().intValue() + manaCost));
                             if (allNodes.contains(newNode)) return;
                             allNodes.add(newNode);
                             nodesForNextRound.add(newNode);
@@ -80,47 +75,15 @@ public class Day22 {
                         });
                     }
                 } else {
-                    GameStateNode newNode = new GameStateNode(node.gameState.performTurn(null, looseOneHPOnPlayerTurn, false), new ArrayList<>(), true, new AtomicInteger(node.manaCost().intValue()));
+                    GameStateNode newNode = new GameStateNode(node.gameState.performTurn(null, looseOneHPOnPlayerTurn), new ArrayList<>(), true, new AtomicInteger(node.manaCost().intValue()));
                     if (allNodes.contains(newNode)) return;
                     allNodes.add(newNode);
                     nodesForNextRound.add(newNode);
                     node.children().add(newNode);
                 }
             });
-        } while (!nodesForNextRound.isEmpty());
+        }
         return winNode.manaCost().intValue();
-    }
-
-    private static GameState firstGameSimulation() {
-        GameState gameState = new GameState(
-                new Input.Stats(13, 8, 0),
-                new Input.Stats(10, 0, 0),
-                250,
-                Map.of()
-        );
-        gameState = gameState.performTurn("Poison", false, true);
-        gameState = gameState.performTurn(null, false, true);
-        gameState = gameState.performTurn("Magic Missile", false, true);
-        return gameState.performTurn(null, false, true);
-    }
-
-    private static GameState secondGameSimulation() {
-        GameState gameState = new GameState(
-                new Input.Stats(14, 8, 0),
-                new Input.Stats(10, 0, 0),
-                250,
-                Map.of()
-        );
-        gameState = gameState.performTurn("Recharge", false, true);
-        gameState = gameState.performTurn(null, false, true);
-        gameState = gameState.performTurn("Shield", false, true);
-        gameState = gameState.performTurn(null, false, true);
-        gameState = gameState.performTurn("Drain", false, true);
-        gameState = gameState.performTurn(null, false, true);
-        gameState = gameState.performTurn("Poison", false, true);
-        gameState = gameState.performTurn(null, false, true);
-        gameState = gameState.performTurn("Magic Missile", false, true);
-        return gameState.performTurn(null, false, true);
     }
 
     private record GameStateNode(GameState gameState, List<GameStateNode> children, boolean playerTurn,
@@ -139,25 +102,9 @@ public class Day22 {
     }
 
     private record Effect(int turns, int armorBonus, int damage, int manaBonus) {
-        public String debugString(int currentTurns) {
-            if (manaBonus > 0)
-                return effectNames.get(this) + " provides " + manaBonus + " mana; its timer is now " + currentTurns + ".";
-            else if (damage > 0)
-                return effectNames.get(this) + " deals " + damage + " damage; its timer is now " + currentTurns + ".";
-            return effectNames.get(this) + "'s  timer is now " + currentTurns + ".";
-        }
     }
 
     private record Spell(String name, int manaCost, int damage, int healing, Effect effect) {
-        public String debugString() {
-            if (damage > 0 && healing > 0) {
-                return ", dealing " + damage + " damage and healing " + healing + " hit points.";
-            }
-            if (damage > 0) {
-                return ", dealing " + damage + " damage.";
-            }
-            return "";
-        }
     }
 
     private record GameState(
@@ -189,122 +136,74 @@ public class Day22 {
                     .toList();
         }
 
-        private GameState performTurn(String spellName, boolean looseOneHPOnPlayerTurn, boolean debug) {
+        private GameState performTurn(String spellName, boolean looseOneHPOnPlayerTurn) {
             if (spellName != null) {
                 List<String> possibleSpells = possibleSpells();
                 if (possibleSpells.isEmpty()) {
-                    if (debug) {
-                        System.out.println("The player can't cast any spell. This kills the player, and the boss wins.");
-                    }
-                    return new GameState(
-                            bossStats,
-                            new Input.Stats(0, playerStats.damage(), playerStats.armor()),
-                            playerMana,
-                            activeEffects);
+                    return playerLose();
                 }
                 if (!possibleSpells.contains(spellName)) {
                     throw new IllegalStateException("Spell: " + spellName + " can not be cast");
                 }
             }
-            if (bossStats.hitPoints() <= 0) return this;
-            if (playerStats.hitPoints() <= 0) return this;
+            if (gameOver()) return this;
+
             int bossHitPoints = bossStats.hitPoints();
             int playerHitPoints = playerStats.hitPoints();
-            if (spellName != null && looseOneHPOnPlayerTurn) {
-                playerHitPoints--;
-                if (playerHitPoints <= 0) {
-                    if (debug) {
-                        System.out.println("This kills the player, and the boss wins.");
-                    }
-                    return new GameState(
-                            bossStats,
-                            new Input.Stats(0, playerStats.damage(), playerStats.armor()),
-                            playerMana,
-                            activeEffects);
-                }
-            }
             int playerMana = playerMana();
             Map<Effect, Integer> activeEffects = new HashMap<>(this.activeEffects);
             int playerArmor = activeEffects.containsKey(SHIELD_EFFECT) ? SHIELD_EFFECT.armorBonus : 0;
-            if (debug) {
-                if (spellName != null) {
-                    System.out.println("-- Player turn --");
-                } else {
-                    System.out.println("-- Boss turn --");
+
+            //hard mode
+            if (looseOneHPOnPlayerTurn && spellName != null) {
+                playerHitPoints--;
+                if (playerHitPoints <= 0) {
+                    return playerLose();
                 }
-                System.out.printf("- Player has %d hit points, %d armor, %d mana%n", playerHitPoints, playerArmor, playerMana);
-                System.out.printf("- Boss has %d hit points%n", bossHitPoints);
             }
+
+            //applying effects
             for (Map.Entry<Effect, Integer> effect : activeEffects.entrySet()) {
-                if (debug) {
-                    System.out.println(effect.getKey().debugString(effect.getValue() - 1));
-                }
                 effect.setValue(effect.getValue() - 1);
                 playerMana += effect.getKey().manaBonus();
                 bossHitPoints -= effect.getKey().damage();
             }
-            activeEffects.entrySet().removeIf(entry -> {
-                boolean shouldRemove = entry.getValue() <= 0;
-                if (shouldRemove && debug) {
-                    System.out.println(effectNames.get(entry.getKey()) + " wears off.");
-                }
-                return shouldRemove;
-            });
+            activeEffects.entrySet().removeIf(entry -> entry.getValue() <= 0);
             if (bossHitPoints <= 0) {
-                if (debug) {
-                    System.out.println("This kills the boss, and the player wins.");
-                }
-                return new GameState(
-                        new Input.Stats(0, bossStats().damage(), 0),
-                        new Input.Stats(playerHitPoints, 0, 0),
-                        playerMana,
-                        activeEffects
-                );
+                return playerWins(playerHitPoints, playerMana, activeEffects);
             }
+
             if (spellName != null) {
+                //casting spell
                 Spell spell = spells.get(spellName);
-                if (debug) {
-                    System.out.println("Player casts " + spellName + spell.debugString());
-                }
                 playerMana -= spell.manaCost();
                 bossHitPoints -= spell.damage();
                 playerHitPoints += spell.healing();
                 if (spell.effect() != EMPTY_EFFECT) {
                     activeEffects.put(spell.effect(), spell.effect().turns());
                 }
-                if (bossHitPoints <= 0) {
-                    if (debug) {
-                        System.out.println("This kills the boss, and the player wins.");
-                    }
-                    return new GameState(
-                            new Input.Stats(0, bossStats().damage(), 0),
-                            new Input.Stats(playerHitPoints, 0, 0),
-                            playerMana,
-                            activeEffects
-                    );
-                }
             } else {
-                int damageDealt = Math.max(1, bossStats.damage() - playerArmor);
-                if (debug) {
-                    System.out.println("Boss attacks for " + damageDealt + " damage.");
-                }
-                playerHitPoints -= damageDealt;
-                if (playerHitPoints <= 0) {
-                    playerHitPoints = 0;
-                    if (debug) {
-                        System.out.println("This kills the player, and the boss wins.");
-                    }
-                }
+                //boss attacking
+                playerHitPoints -= Math.max(1, bossStats.damage() - playerArmor);
             }
-            if (debug) {
-                System.out.println();
-            }
+            return nextState(bossHitPoints, playerHitPoints, playerMana, activeEffects);
+        }
+
+        private @NonNull GameState nextState(int bossHitPoints, int playerHitPoints, int playerMana, Map<Effect, Integer> activeEffects) {
             return new GameState(
-                    new Input.Stats(bossHitPoints, bossStats().damage(), 0),
-                    new Input.Stats(playerHitPoints, 0, 0),
+                    new Input.Stats(bossHitPoints, bossStats.damage(), bossStats.armor()),
+                    new Input.Stats(playerHitPoints, playerStats.damage(), playerStats.armor()),
                     playerMana,
                     activeEffects
             );
+        }
+
+        private @NonNull GameState playerWins(int playerHitPoints, int playerMana, Map<Effect, Integer> activeEffects) {
+            return nextState(0, playerHitPoints, playerMana, activeEffects);
+        }
+
+        private @NonNull GameState playerLose() {
+            return nextState(bossStats.hitPoints(), 0, playerMana, activeEffects);
         }
     }
 }
