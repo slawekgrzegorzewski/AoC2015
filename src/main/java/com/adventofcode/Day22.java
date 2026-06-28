@@ -8,19 +8,19 @@ import java.util.*;
 
 public class Day22 {
 
-    private final Input.Stats bossStats;
 
-    private static final Effect EMPTY_EFFECT = new Effect(0, 0, 0, 0);
     private static final Effect SHIELD_EFFECT = new Effect(6, 7, 0, 0);
     private static final Effect POISON_EFFECT = new Effect(6, 0, 3, 0);
     private static final Effect RECHARGE_EFFECT = new Effect(5, 0, 0, 101);
-    private static final Map<String, Spell> spells = Map.of(
-            "Magic Missile", new Spell("Magic Missile", 53, 4, 0, EMPTY_EFFECT),
-            "Drain", new Spell("Drain", 73, 2, 2, EMPTY_EFFECT),
-            "Shield", new Spell("Shield", 113, 0, 0, SHIELD_EFFECT),
-            "Poison", new Spell("Poison", 173, 0, 0, POISON_EFFECT),
-            "Recharge", new Spell("Recharge", 229, 0, 0, RECHARGE_EFFECT)
+    private static final List<Spell> SPELLS = List.of(
+            new Spell("Magic Missile", 53, 4, 0, null),
+            new Spell("Drain", 73, 2, 2, null),
+            new Spell("Shield", 113, 0, 0, SHIELD_EFFECT),
+            new Spell("Poison", 173, 0, 0, POISON_EFFECT),
+            new Spell("Recharge", 229, 0, 0, RECHARGE_EFFECT)
     );
+
+    private final Input.Stats bossStats;
 
     public Day22() throws IOException {
         bossStats = Input.day22();
@@ -37,7 +37,7 @@ public class Day22 {
     private int checkAllGamesVariants(boolean looseOneHPOnPlayerTurn) {
         final Set<GameStateNode> allNodes = new HashSet<>();
         final GameStateNode winNode = new GameStateNode(null, false, 0);
-        final GameStateNode looseNode = new GameStateNode(null, false, 0);
+        final GameStateNode loseNode = new GameStateNode(null, false, 0);
         final GameStateNode initialNode = new GameStateNode(
                 new GameState(
                         bossStats,
@@ -47,7 +47,7 @@ public class Day22 {
                 true,
                 0);
         allNodes.add(winNode);
-        allNodes.add(looseNode);
+        allNodes.add(loseNode);
         allNodes.add(initialNode);
         Set<GameStateNode> nodesForNextRound = new HashSet<>();
         nodesForNextRound.add(initialNode);
@@ -55,28 +55,28 @@ public class Day22 {
             Set<GameStateNode> workingNodes = new HashSet<>(nodesForNextRound);
             nodesForNextRound.clear();
             workingNodes.forEach(node -> {
-                if (node == winNode || node == looseNode) return;
+                if (node == winNode || node == loseNode) return;
                 if (node.gameState.gameOver()) {
-                    node.children().clear();
                     if (node.gameState.playerWon()) {
                         if (winNode.manaCost() == 0 || node.manaCost() < winNode.manaCost())
                             winNode.manaCost(node.manaCost());
-                        node.children().add(winNode);
-                    } else {
-                        node.children().add(looseNode);
                     }
                 } else if (node.playerTurn) {
-                    List<String> possibleSpells = node.gameState.possibleSpells();
-                    if (possibleSpells.isEmpty()) {
-                        node.children().add(looseNode);
-                    } else {
-                        possibleSpells.forEach(spellName -> {
-                            int manaCost = spells.get(spellName).manaCost();
-                            GameStateNode newNode = new GameStateNode(node.gameState.performTurn(spellName, looseOneHPOnPlayerTurn), false, node.manaCost() + manaCost);
-                            if (allNodes.contains(newNode)) return;
+                    List<Spell> possibleSpells = node.gameState.possibleSpells();
+                    if (!possibleSpells.isEmpty()) {
+                        possibleSpells.forEach(spell -> {
+                            int manaCost = spell.manaCost();
+                            GameStateNode newNode = new GameStateNode(node.gameState.performTurn(spell, looseOneHPOnPlayerTurn), false, node.manaCost() + manaCost);
+                            if (allNodes.contains(newNode)) {
+                                if (newNode.manaCost() < node.manaCost()) {
+                                    allNodes.remove(newNode);
+                                    allNodes.add(newNode);
+                                }
+                                return;
+                            }
+
                             allNodes.add(newNode);
                             nodesForNextRound.add(newNode);
-                            node.children().add(newNode);
                         });
                     }
                 } else {
@@ -84,7 +84,6 @@ public class Day22 {
                     if (allNodes.contains(newNode)) return;
                     allNodes.add(newNode);
                     nodesForNextRound.add(newNode);
-                    node.children().add(newNode);
                 }
             });
         }
@@ -93,19 +92,13 @@ public class Day22 {
 
     private static final class GameStateNode {
         private final GameState gameState;
-        private final List<GameStateNode> children;
         private final boolean playerTurn;
         private int manaCost;
 
         private GameStateNode(GameState gameState, boolean playerTurn, int manaCost) {
             this.gameState = gameState;
-            this.children = new ArrayList<>();
             this.playerTurn = playerTurn;
             this.manaCost = manaCost;
-        }
-
-        public List<GameStateNode> children() {
-            return children;
         }
 
         public int manaCost() {
@@ -120,12 +113,12 @@ public class Day22 {
         public boolean equals(Object o) {
             if (o == null || getClass() != o.getClass()) return false;
             GameStateNode that = (GameStateNode) o;
-            return playerTurn == that.playerTurn && Objects.equals(gameState, that.gameState) && Objects.equals(children, that.children);
+            return Objects.equals(gameState, that.gameState);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(gameState, children, playerTurn);
+            return Objects.hash(gameState);
         }
 
     }
@@ -154,25 +147,22 @@ public class Day22 {
             return bossStats.hitPoints() > 0 && playerStats.hitPoints() <= 0;
         }
 
-        public List<String> possibleSpells() {
-            return spells.entrySet().stream()
-                    .filter(entry -> activeEffects.getOrDefault(entry.getValue().effect(), 0) <= 1)
-                    .filter(entry -> {
-                        int availableMana = playerMana + activeEffects.keySet().stream().mapToInt(Effect::manaBonus).sum();
-                        return entry.getValue().manaCost() <= availableMana;
-                    })
-                    .map(Map.Entry::getKey)
+        public List<Spell> possibleSpells() {
+            int availableMana = playerMana + activeEffects.keySet().stream().mapToInt(Effect::manaBonus).sum();
+            return SPELLS.stream()
+                    .filter(spell -> spell.effect() == null || activeEffects.getOrDefault(spell.effect(), 0) <= 1)
+                    .filter(entry -> entry.manaCost() <= availableMana)
                     .toList();
         }
 
-        private GameState performTurn(String spellName, boolean looseOneHPOnPlayerTurn) {
-            if (spellName != null) {
-                List<String> possibleSpells = possibleSpells();
+        private GameState performTurn(Spell spell, boolean loseOneHPOnPlayerTurn) {
+            if (spell != null) {
+                List<Spell> possibleSpells = possibleSpells();
                 if (possibleSpells.isEmpty()) {
                     return playerLose();
                 }
-                if (!possibleSpells.contains(spellName)) {
-                    throw new IllegalStateException("Spell: " + spellName + " can not be cast");
+                if (!possibleSpells.contains(spell)) {
+                    throw new IllegalStateException("Spell: " + spell.name() + " can not be cast");
                 }
             }
             if (gameOver()) return this;
@@ -184,7 +174,7 @@ public class Day22 {
             int playerArmor = activeEffects.containsKey(SHIELD_EFFECT) ? SHIELD_EFFECT.armorBonus : 0;
 
             //hard mode
-            if (looseOneHPOnPlayerTurn && spellName != null) {
+            if (loseOneHPOnPlayerTurn && spell != null) {
                 playerHitPoints--;
                 if (playerHitPoints <= 0) {
                     return playerLose();
@@ -202,13 +192,12 @@ public class Day22 {
                 return playerWins(playerHitPoints, playerMana, activeEffects);
             }
 
-            if (spellName != null) {
+            if (spell != null) {
                 //casting spell
-                Spell spell = spells.get(spellName);
                 playerMana -= spell.manaCost();
                 bossHitPoints -= spell.damage();
                 playerHitPoints += spell.healing();
-                if (spell.effect() != EMPTY_EFFECT) {
+                if (spell.effect() != null) {
                     activeEffects.put(spell.effect(), spell.effect().turns());
                 }
             } else {
