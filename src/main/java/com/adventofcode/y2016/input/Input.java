@@ -1,6 +1,7 @@
 package com.adventofcode.y2016.input;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.adventofcode.Utils.getInputFromFile;
@@ -8,7 +9,10 @@ import static com.adventofcode.Utils.getInputFromFile;
 public class Input {
 
     public static List<String> day1() throws IOException {
-        return getInputFromFile("/y2016/day1");
+        return Arrays.stream(getInputFromFile("/y2016/day1")
+                        .getFirst()
+                        .split(", "))
+                .toList();
     }
 
     public static List<String> day2() throws IOException {
