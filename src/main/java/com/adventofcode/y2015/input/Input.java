@@ -3,12 +3,12 @@ package com.adventofcode.y2015.input;
 import com.adventofcode.y2015.Box;
 import com.google.common.base.Splitter;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static com.adventofcode.Utils.getInputFromFile;
 
 public class Input {
 
@@ -258,12 +258,6 @@ public class Input {
     }
 
     public record RowColumn(int row, int column) {
-    }
-
-    private static List<String> getInputFromFile(String resourceName) throws IOException {
-        try (InputStreamReader in = new InputStreamReader(Objects.requireNonNull(Input.class.getResourceAsStream(resourceName))); BufferedReader reader = new BufferedReader(in)) {
-            return reader.lines().collect(Collectors.toList());
-        }
     }
 
     public record LitInstruction(String operation, int leftTopX, int leftTopY, int rightDownX, int rightDownY) {
