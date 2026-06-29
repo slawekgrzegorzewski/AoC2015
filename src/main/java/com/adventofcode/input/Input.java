@@ -248,8 +248,16 @@ public class Input {
         return getInputFromFile("/day24").stream().map(Integer::parseInt).collect(Collectors.toList());
     }
 
-    public static List<String> day25() throws IOException {
-        return getInputFromFile("/day25");
+    public static RowColumn day25() throws IOException {
+        String line = getInputFromFile("/day25").getFirst();
+        String[] parts = line.replace("To continue, please consult the code grid in the manual.  Enter the code at row ", "")
+                .replace(" column", "")
+                .replace(".", "")
+                .split(",");
+        return new RowColumn(Integer.parseInt(parts[0].trim()), Integer.parseInt(parts[1].trim()));
+    }
+
+    public record RowColumn(int row, int column) {
     }
 
     private static List<String> getInputFromFile(String resourceName) throws IOException {
