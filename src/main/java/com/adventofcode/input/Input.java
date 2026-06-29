@@ -244,8 +244,8 @@ public class Input {
         return getInputFromFile("/day23");
     }
 
-    public static List<String> day24() throws IOException {
-        return getInputFromFile("/day24");
+    public static List<Integer> day24() throws IOException {
+        return getInputFromFile("/day24").stream().map(Integer::parseInt).collect(Collectors.toList());
     }
 
     public static List<String> day25() throws IOException {
