@@ -1,5 +1,7 @@
 package com.adventofcode.y2016.input;
 
+import com.google.common.base.Splitter;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -19,8 +21,11 @@ public class Input {
         return getInputFromFile("/y2016/day2");
     }
 
-    public static List<String> day3() throws IOException {
-        return getInputFromFile("/y2016/day3");
+    public static List<List<Integer>> day3() throws IOException {
+        return getInputFromFile("/y2016/day3")
+                .stream()
+                .map(line -> Splitter.on(" ").omitEmptyStrings().trimResults().splitToList(line).stream().map(Integer::parseInt).toList())
+                .toList();
     }
 
     public static List<String> day4() throws IOException {
