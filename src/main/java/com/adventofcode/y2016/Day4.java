@@ -3,7 +3,11 @@ package com.adventofcode.y2016;
 import com.adventofcode.y2016.input.Input;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Day4 {
@@ -36,58 +40,43 @@ public class Day4 {
     }
 
     public record Room(String encryptedName, int id) {
+        private static final Pattern ROOM = Pattern.compile("([a-z-]+)-(\\d+)\\[([a-z]{5})]");
+
         public static Optional<Room> tryParse(String line) {
-            Map<Character, Integer> charStats = new HashMap<>();
-            StringBuilder name = new StringBuilder();
-            int id = 0;
-            StringBuilder checkSum = new StringBuilder();
-            boolean checksumPart = false;
-            for (char c : line.toCharArray()) {
-                if (c == '-') {
-                    if (!checksumPart)
-                        name.append(c);
-                } else if (c >= 'a' && c <= 'z') {
-                    if (checksumPart) checkSum.append(c);
-                    else {
-                        charStats.compute(c, (_, v) -> v == null ? 1 : v + 1);
-                        name.append(c);
-                    }
-                } else if (c == '[') {
-                    checksumPart = true;
-                } else if (c >= '0' && c <= '9') {
-                    id = id * 10 + (c - '0');
-                } else if (c != ']') throw new RuntimeException();
+            Matcher m = ROOM.matcher(line);
+            if (!m.matches()) {
+                throw new IllegalArgumentException("Invalid room format: " + line);
             }
+            String name = m.group(1);
+            int id = Integer.parseInt(m.group(2));
+            String givenChecksum = m.group(3);
 
-            if (name.charAt(name.length() - 1) == '-')
-                name.deleteCharAt(name.length() - 1);
+            Map<Character, Long> charStats = name.chars()
+                    .filter(c -> c != '-')
+                    .mapToObj(c -> (char) c)
+                    .collect(Collectors.groupingBy(c -> c, Collectors.counting()));
 
-            String realCheckSum = charStats.keySet().stream()
-                    .sorted(Comparator.<Character, Integer>comparing(charStats::get).reversed().thenComparing(c -> c))
+            String realCheckSum = charStats.entrySet().stream()
+                    .sorted(Map.Entry.<Character, Long>comparingByValue().reversed().thenComparing(Map.Entry.comparingByKey()))
                     .limit(5)
-                    .map(Object::toString)
-                    .collect(Collectors.joining(""));
-            return realCheckSum.contentEquals(checkSum)
-                    ? Optional.of(new Room(name.toString(), id))
+                    .map(e -> e.getKey().toString())
+                    .collect(Collectors.joining());
+
+            return realCheckSum.contentEquals(givenChecksum)
+                    ? Optional.of(new Room(name, id))
                     : Optional.empty();
         }
 
         public String decryptName() {
-            int shift = id % ALPHABET_SIZE;
-            return shift(encryptedName, shift);
-        }
-
-        private String shift(String encryptedName, int shift) {
             StringBuilder decryptedName = new StringBuilder();
             for (char c : encryptedName.toCharArray()) {
-                if (c == '-') decryptedName.append('-');
-                else {
-                    int newChar = c + shift;
-                    if (newChar > 'z') newChar -= ALPHABET_SIZE;
-                    decryptedName.append((char) newChar);
-                }
+                if (c == '-')
+                    decryptedName.append('-');
+                else
+                    decryptedName.append((char) ('a' + (c - 'a' + id) % ALPHABET_SIZE));
             }
             return decryptedName.toString();
         }
+
     }
 }
