@@ -36,7 +36,7 @@ public class Day5 {
             if (digest[0] == 0 && digest[1] == 0 && (digest[2] & 0xF0) == 0) {
                 int position = digest[2] & 0x0F;
                 if (position < 8) {
-                    char c = Character.forDigit((digest[3] & 0xF0) / 16, 16);
+                    char c = Character.forDigit((digest[3] & 0xF0) >> 4 , 16);
                     if (password.charAt(position) == '_') {
                         password.setCharAt(position, c);
                     }
