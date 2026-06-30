@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -18,12 +19,12 @@ class Day5Test {
     }
 
     @Test
-    void testPart1() {
-        assertEquals(0L, day5.part1());
+    void testPart1() throws NoSuchAlgorithmException {
+        assertEquals("1a3099aa", day5.part1());
     }
 
     @Test
-    void testPart2() {
-        assertEquals(0L, day5.part2());
+    void testPart2() throws NoSuchAlgorithmException {
+        assertEquals("694190cd", day5.part2());
     }
 }
