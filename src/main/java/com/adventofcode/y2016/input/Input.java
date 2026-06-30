@@ -48,8 +48,8 @@ public class Input {
         return getInputFromFile("/y2016/day8");
     }
 
-    public static List<String> day9() throws IOException {
-        return getInputFromFile("/y2016/day9");
+    public static String day9() throws IOException {
+        return getInputFromFile("/y2016/day9").getFirst();
     }
 
     public static List<String> day10() throws IOException {
