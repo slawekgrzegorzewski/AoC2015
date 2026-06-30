@@ -9,7 +9,7 @@ import java.util.function.Function;
 public class Day1 {
     private final List<String> input;
 
-    private static enum Direction {
+    private enum Direction {
         NORTH, SOUTH, EAST, WEST;
 
         public Direction left() {
@@ -36,63 +36,93 @@ public class Day1 {
     }
 
     long part1() {
-        return task(1);
+        return task(false);
     }
 
     long part2() {
-        return task(2);
+        return task(true);
     }
 
-    private long task(int part) {
-        int x = 0, y = 0;
-        Direction direction = Direction.NORTH;
-        Set<Position> visited = new HashSet<>();
-        visited.add(new Position(x, y));
+    private long task(boolean part2) {
+        Position position = new Position(0, 0, Direction.NORTH);
+        Set<Position> visited = null;
+        if (part2) {
+            visited = new HashSet<>();
+            visited.add(position);
+        }
         for (String command : input) {
-            direction = command.startsWith("R") ? direction.right() : direction.left();
             int moves = Integer.parseInt(command.substring(1));
-            int initialX = x, initialY = y;
-            switch (direction) {
-                case NORTH -> y += moves;
-                case SOUTH -> y -= moves;
-                case EAST -> x += moves;
-                case WEST -> x -= moves;
-            }
-            Optional<Long> resultForPartTwo = addAndCheckIntermediatePoints(visited, initialX, initialY, x, y)
-                    .stream()
-                    .filter(value -> part == 2)
-                    .boxed()
-                    .findAny();
-            if (resultForPartTwo.isPresent())
-                return resultForPartTwo.orElseThrow();
-        }
-        return Math.abs(x) + Math.abs(y);
-    }
-
-    private static OptionalLong addAndCheckIntermediatePoints(Set<Position> visited, int fromX, int fromY, int toX, int toY) {
-        Function<Integer, Position> newPositionSupplier;
-        int from, to;
-        if (fromX != toX) {
-            newPositionSupplier = x -> new Position(x, fromY);
-            from = fromX + (fromX < toX ? 1 : -1);
-            to = toX;
-        } else {
-            newPositionSupplier = y -> new Position(fromX, y);
-            from = fromY + (fromY < toY ? 1 : -1);
-            to = toY;
-        }
-        boolean increment = from < to;
-        for (int i = from; (increment && i <= to) || (!increment && i >= to); i += increment ? 1 : -1) {
-            Position newPosition = newPositionSupplier.apply(i);
-            if (!visited.contains(newPosition)) {
-                visited.add(newPosition);
-            } else {
-                return OptionalLong.of(Math.abs(newPosition.x) + Math.abs(newPosition.y));
+            List<Position> path = position.moveAndGetPath(command.substring(0, 1), moves);
+            position = path.getLast();
+            if (part2) {
+                for (Position pathPoint : path) {
+                    if (!visited.contains(pathPoint)) {
+                        visited.add(pathPoint);
+                    } else {
+                        return pathPoint.manhattanDistance();
+                    }
+                }
             }
         }
-        return OptionalLong.empty();
+        return position.manhattanDistance();
     }
 
-    private record Position(int x, int y) {
+    private record Position(int x, int y, Direction direction) {
+        public List<Position> moveAndGetPath(String direction, int distance) {
+            int newX = x, newY = y;
+            Direction newDirection = direction.equals("R")
+                    ? this.direction.right()
+                    : this.direction.left();
+            Function<Integer, Position> newPositionSupplier = null;
+            int iterateFrom = 0, iterateTo = 0;
+            switch (newDirection) {
+                case NORTH -> {
+                    newY += distance;
+                    newPositionSupplier = y -> new Position(this.x(), y, newDirection);
+                    iterateFrom = this.y() + 1;
+                    iterateTo = newY;
+                }
+                case SOUTH -> {
+                    newY -= distance;
+                    newPositionSupplier = y -> new Position(this.x(), y, newDirection);
+                    iterateFrom = this.y() - 1;
+                    iterateTo = newY;
+                }
+                case EAST -> {
+                    newX += distance;
+                    newPositionSupplier = x -> new Position(x, this.y(), newDirection);
+                    iterateFrom = this.x() + 1;
+                    iterateTo = newX;
+                }
+                case WEST -> {
+                    newX -= distance;
+                    newPositionSupplier = x -> new Position(x, this.y(), newDirection);
+                    iterateFrom = this.x() - 1;
+                    iterateTo = newX;
+                }
+            }
+            List<Position> path = new ArrayList<>();
+            boolean increment = iterateFrom < iterateTo;
+            for (int i = iterateFrom; (increment && i <= iterateTo) || (!increment && i >= iterateTo); i += increment ? 1 : -1) {
+                path.add(newPositionSupplier.apply(i));
+            }
+            return path;
+        }
+
+        public long manhattanDistance() {
+            return Math.abs(x) + Math.abs(y);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            Position position = (Position) o;
+            return x == position.x && y == position.y;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(x, y);
+        }
     }
 }
