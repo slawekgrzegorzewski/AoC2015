@@ -11,6 +11,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Day11 {
+
+    private static final Pattern FLOOR_PATTERN = Pattern.compile("The ([a-z]+) floor contains (.*)\\.");
+    private static final Pattern EQUIPMENT_PATTERN = Pattern.compile("a ([a-z]+)(-compatible microchip| generator)");
     private final List<String> input;
 
 
@@ -20,142 +23,95 @@ public class Day11 {
 
     long part1() {
         Arrangement arrangement = parse();
-        Set<Node> nodes = new HashSet<>();
-        Node node = new Node(arrangement, 0);
-        nodes.add(node);
-//        return walk(nodes, node, 100);
-        return walk2(node);
+        return work(arrangement);
     }
 
-    private int walk2(Node firstNode) {
-        Set<Node> allNodes = new HashSet<>();
-        allNodes.add(firstNode);
-        Set<Node> nodesCreatedInStep = new HashSet<>();
-        List<Node> workingNodes = new ArrayList<>();
-        workingNodes.add(firstNode);
-        while (!workingNodes.isEmpty()) {
-            System.out.println("allNodes.size() = " + allNodes.size());
-            System.out.println("workingNodes.size() = " + workingNodes.size());
-            System.out.println("current cost = " + workingNodes.getFirst().cost);
-            System.out.println();
-            for (int i = 0; i < workingNodes.size(); i++) {
-                Node node = workingNodes.get(i);
-                if (node.arrangement.allElementsAtLastFloor()) {
-                    return node.cost;
+    long part2() {
+        Arrangement arrangement = parse();
+        arrangement = new Arrangement(
+                arrangement.firstFloorElements | 0b11110000000000,
+                arrangement.secondFloorElements,
+                arrangement.thirdFloorElements,
+                arrangement.fourthFloorElements,
+                arrangement.numberOfElements + 2,
+                1
+        );
+        return work(arrangement);
+    }
+
+    private int work(Arrangement arrangement) {
+        Set<Arrangement> allArrangements = new HashSet<>();
+        Set<Arrangement> arrangementsCreatedInStep = new HashSet<>();
+        Set<Arrangement> workingArrangements = new HashSet<>();
+
+        allArrangements.add(arrangement);
+        workingArrangements.add(arrangement);
+
+        int cost = 0;
+        while (!workingArrangements.isEmpty()) {
+            for (Arrangement workingArrangement : workingArrangements) {
+                if (workingArrangement.allElementsAtLastFloor()) {
+                    return cost;
                 }
-                Set<Node> newChildrenOfNode = getNewChildrenOfNode(allNodes, node);
-                nodesCreatedInStep.addAll(newChildrenOfNode);
-                allNodes.addAll(newChildrenOfNode);
+                Set<Arrangement> nextArrangements = getNextArrangements(allArrangements, workingArrangement);
+                arrangementsCreatedInStep.addAll(nextArrangements);
             }
-            workingNodes.clear();
-            workingNodes.addAll(nodesCreatedInStep);
-            nodesCreatedInStep.clear();
+            workingArrangements.clear();
+            workingArrangements.addAll(arrangementsCreatedInStep);
+            arrangementsCreatedInStep.clear();
+            cost++;
         }
         throw new RuntimeException("No solution found");
     }
 
-    private Set<Node> getNewChildrenOfNode(Set<Node> allNodes, Node node) {
-        return getElevatorCargoCombinations(node.arrangement.elevatorFloorElements())
-                .stream()
-                .flatMap(cargo -> Stream.of(
-                        node.arrangement.canMoveDown() ? node.arrangement.moveDown(cargo) : null,
-                        node.arrangement.canMoveUp() ? node.arrangement.moveUp(cargo) : null))
-                .filter(Objects::nonNull)
-                .filter(Arrangement::allElementsIntact)
-                .map(newArrangement -> {
-                    Node newChild = new Node(newArrangement, node.cost + 1);
-                    return allNodes.contains(newChild) ? null : newChild;
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-    }
+    private Set<Arrangement> getNextArrangements(Set<Arrangement> allArrangements, Arrangement arrangement) {
+        Set<Arrangement> newChildren = new HashSet<>();
+        int floorPlan = arrangement.elevatorFloorElements();
 
-    private static int level = 0;
-
-    private int walk(Set<Node> nodes, Node node, int minCostSoFar) {
-        level++;
-        try {
-            if (node.arrangement.allElementsAtLastFloor()) {
-                debug("1", node, nodes);
-                return node.cost;
-            }
-            if (node.cost >= minCostSoFar) {
-                debug("2", node, nodes);
-                return Integer.MAX_VALUE;
-            }
-            if (node.children.isEmpty()) {
-                debug("3", node, nodes);
-                List<Node> children = getElevatorCargoCombinations(node.arrangement.elevatorFloorElements())
-                        .stream()
-                        .flatMap(cargo -> Stream.of(
-                                node.arrangement.canMoveDown() ? node.arrangement.moveDown(cargo) : null,
-                                node.arrangement.canMoveUp() ? node.arrangement.moveUp(cargo) : null))
-                        .filter(Objects::nonNull)
-                        .filter(Arrangement::allElementsIntact)
-                        .map(newArrangement -> {
-                            Node newChild = new Node(newArrangement, node.cost + 1);
-                            Optional<Node> existingNode = nodes.stream().filter(newChild::equals).findAny();
-                            if (existingNode.isEmpty()) nodes.add(newChild);
-                            return existingNode.map(exisitingChild -> {
-                                if (exisitingChild.cost > newChild.cost) {
-                                    exisitingChild.cost = newChild.cost;
-                                    return exisitingChild;
-                                }
-                                return exisitingChild;
-                            }).orElse(newChild);
-                        })
-                        .toList();
-                children.forEach(node::addChild);
-                int minCostFromThisNode = Integer.MAX_VALUE;
-                for (Node child : children) {
-                    minCostFromThisNode = Math.min(minCostFromThisNode, walk(nodes, child, minCostSoFar));
-                    minCostSoFar = Math.min(minCostSoFar, minCostFromThisNode);
-                }
-                return minCostFromThisNode;
-            } else {
-                debug("4", node, nodes);
-                int minCostFromThisNode = Integer.MAX_VALUE;
-                for (Node child : node.children) {
-                    if (node.cost < child.cost - 1) {
-                        child.cost = node.cost + 1;
-                        minCostFromThisNode = Math.min(minCostFromThisNode, walk(nodes, child, minCostSoFar));
-                        minCostSoFar = Math.min(minCostSoFar, minCostFromThisNode);
-                    }
-                }
-                return minCostFromThisNode;
-            }
-        } finally {
-            level--;
-        }
-    }
-
-    private static void debug(String discriminator, Node node, Collection<Node> nodes) {
-        System.out.printf("option %s, level = %d, node.cost = %d, nodes created = %d%n",
-                discriminator, level, node.cost, nodes.size());
-    }
-
-    private List<List<String>> getElevatorCargoCombinations(List<String> floorElements) {
-        List<List<String>> cargoCombinations = new ArrayList<>();
-        for (int i = 0; i < floorElements.size() - 1; i++) {
-            cargoCombinations.add(List.of(floorElements.get(i)));
-            for (int j = i + 1; j < floorElements.size(); j++) {
-                cargoCombinations.add(List.of(floorElements.get(i), floorElements.get(j)));
+        for (int cargo = floorPlan; cargo != 0; cargo = clearLowestSetBit(cargo)) {
+            int singleElementCargo = lowestSetBitMask(cargo);
+            addChildIfValid(allArrangements, arrangement, newChildren, singleElementCargo);
+            for (int remaining = clearLowestSetBit(cargo); remaining != 0; remaining = clearLowestSetBit(remaining)) {
+                int pairCargo = singleElementCargo | lowestSetBitMask(remaining);
+                addChildIfValid(allArrangements, arrangement, newChildren, pairCargo);
             }
         }
-        cargoCombinations.add(List.of(floorElements.getLast()));
-        return cargoCombinations;
+        return newChildren;
+    }
+
+    private static int lowestSetBitMask(int number) {
+        return number & -number;
+    }
+
+    private static int clearLowestSetBit(int number) {
+        return number & number - 1;
+    }
+
+    private static void addChildIfValid(Set<Arrangement> allArrangements, Arrangement arrangement, Set<Arrangement> newArrangements, int cargo) {
+        if (arrangement.canMoveDown()) {
+            Arrangement movedDown = arrangement.moveDown(cargo);
+            if (movedDown.allElementsIntact() && !allArrangements.contains(movedDown)) {
+                newArrangements.add(movedDown);
+                allArrangements.add(movedDown);
+            }
+        }
+        if (arrangement.canMoveUp()) {
+            Arrangement movedUp = arrangement.moveUp(cargo);
+            if (movedUp.allElementsIntact() && !allArrangements.contains(movedUp)) {
+                newArrangements.add(movedUp);
+                allArrangements.add(movedUp);
+            }
+        }
     }
 
     private Arrangement parse() {
         Map<Integer, List<String>> floorsMap = new HashMap<>();
-        Pattern floorPattern = Pattern.compile("The ([a-z]+) floor contains (.*)\\.");
-        Pattern equipmentPattern = Pattern.compile("a ([a-z]+)((?:-compatible microchip| generator))");
         for (String line : input) {
-            Matcher matcher = floorPattern.matcher(line);
+            Matcher matcher = FLOOR_PATTERN.matcher(line);
             if (!matcher.find()) throw new IllegalArgumentException("Invalid input");
             int floor = getNumber(matcher.group(1));
             floorsMap.putIfAbsent(floor, new ArrayList<>());
-            Matcher matcher1 = equipmentPattern.matcher(matcher.group(2));
+            Matcher matcher1 = EQUIPMENT_PATTERN.matcher(matcher.group(2));
             while (matcher1.find()) {
                 floorsMap.get(floor).add(
                         ((Character) matcher1.group(1).charAt(0)).toString().toUpperCase()
@@ -163,11 +119,41 @@ public class Day11 {
                 );
             }
         }
-        return new Arrangement(floorsMap,
-                1,
-                floorsMap.keySet().stream().mapToInt(i -> i).min().orElseThrow(),
-                floorsMap.keySet().stream().mapToInt(i -> i).max().orElseThrow());
+        List<String> elementLetters = floorsMap.values().stream()
+                .flatMap(List::stream)
+                .map(element -> String.valueOf(element.charAt(0)))
+                .distinct()
+                .sorted()
+                .toList();
+        Map<Integer, Integer> floorsMapAsInteger = floorsMap.entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> addElements(0, translateLetters(elementLetters, entry.getValue()))));
+
+        return new Arrangement(floorsMapAsInteger.get(1),
+                floorsMapAsInteger.get(2),
+                floorsMapAsInteger.get(3),
+                floorsMapAsInteger.get(4),
+                elementLetters.size(),
+                1);
     }
+
+    private List<String> translateLetters(List<String> elementLetters, List<String> value) {
+        return value.stream()
+                .map(element -> String.valueOf((char) ('A' + elementLetters.indexOf(String.valueOf(element.charAt(0))))) + element.charAt(1))
+                .toList();
+    }
+
+    private static int addElements(int newFloorElements, List<String> elements) {
+        for (String element : elements) {
+            int elementIndex = element.charAt(0) - 'A';
+            int elementOffset = element.charAt(1) == 'G' ? 0 : 1;
+            newFloorElements |= 1 << (elementIndex * 2 + elementOffset);
+        }
+        return newFloorElements;
+    }
+
 
     private int getNumber(String orderNumber) {
         return switch (orderNumber) {
@@ -179,139 +165,161 @@ public class Day11 {
         };
     }
 
-    long part2() {
-        return 0L;
-    }
+    private record Arrangement(int firstFloorElements,
+                               int secondFloorElements,
+                               int thirdFloorElements,
+                               int fourthFloorElements,
+                               int numberOfElements,
+                               int elevatorFloor) {
+        private static final Map<Integer, Byte> OFFSETS = Map.of(
+                1, (byte) 0,
+                2, (byte) 2,
+                3, (byte) 4,
+                4, (byte) 6,
+                5, (byte) 8,
+                6, (byte) 10,
+                7, (byte) 12,
+                8, (byte) 14);
 
-    private class Node {
-        private final Arrangement arrangement;
-        private List<Node> children = new ArrayList<>();
-        private int cost;
-
-        private Node(Arrangement arrangement, int cost) {
-            this.arrangement = arrangement;
-            this.cost = cost;
+        @Override
+        @NonNull
+        public String toString() {
+            StringBuilder result = new StringBuilder();
+            List<Integer> floors = List.of(fourthFloorElements, thirdFloorElements, secondFloorElements, firstFloorElements);
+            for (int i = 0; i < floors.size(); i++) {
+                result.append("F")
+                        .append(i + 1)
+                        .append((i + 1) == (elevatorFloor) ? "\tE\t" : "\t.\t")
+                        .append(elementsString(floors.get(i)))
+                        .append(i == floors.size() - 1 ? "" : "\n");
+            }
+            return result.toString();
         }
 
-        public Arrangement getArrangement() {
-            return arrangement;
-        }
-
-        public int getCost() {
-            return cost;
-        }
-
-        public Node setCost(int cost) {
-            this.cost = cost;
-            return this;
-        }
-
-        public List<Node> getChildren() {
-            return children;
-        }
-
-        public void addChild(Node node) {
-            children.add(node);
+        private String elementsString(int value) {
+            StringBuilder sb = new StringBuilder();
+            for (int i = numberOfElements; i > 0; i--) {
+                if (!sb.isEmpty()) sb.append("\t");
+                char elementLetter = (char) ('A' + i - 1);
+                byte elementConfiguration = (byte) ((value >> OFFSETS.get(i)) & 0x3);
+                switch (elementConfiguration) {
+                    case 0 -> sb.append(".\t.");
+                    case 1 -> sb.append(".\t").append(elementLetter).append("G");
+                    case 2 -> sb.append(elementLetter).append("M\t.");
+                    default -> sb.append(elementLetter).append("M\t").append(elementLetter).append("G");
+                }
+            }
+            return sb.toString();
         }
 
         @Override
         public boolean equals(Object o) {
             if (o == null || getClass() != o.getClass()) return false;
-            Node node = (Node) o;
-            return Objects.equals(arrangement, node.arrangement);
+            Arrangement that = (Arrangement) o;
+            return elevatorFloor == that.elevatorFloor
+                    && numberOfElements == that.numberOfElements
+                    && new FloorStats(firstFloorElements).equals(new FloorStats(that.firstFloorElements))
+                    && new FloorStats(thirdFloorElements).equals(new FloorStats(that.thirdFloorElements))
+                    && new FloorStats(secondFloorElements).equals(new FloorStats(that.secondFloorElements))
+                    && new FloorStats(fourthFloorElements).equals(new FloorStats(that.fourthFloorElements));
         }
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(arrangement);
-        }
-    }
-
-    private record Arrangement(Map<Integer, List<String>> floorsMap,
-                               int elevatorFloor,
-                               int firstFloor,
-                               int lastFloor) {
-
-        @Override
-        @NonNull
-        public String toString() {
-            List<String> sorted = floorsMap.values()
-                    .stream()
-                    .flatMap(Collection::stream)
-                    .sorted()
-                    .toList();
-            return floorsMap.entrySet().stream()
-                    .sorted(Map.Entry.<Integer, List<String>>comparingByKey().reversed())
-                    .map(entry -> "F" + entry.getKey() + (entry.getKey().equals(elevatorFloor) ? "\tE\t" : "\t.\t") + getString(sorted, entry.getValue()))
-                    .collect(Collectors.joining("\n"));
-        }
-
-        private String getString(List<String> elements, List<String> value) {
-            return elements
-                    .stream()
-                    .map(element -> value.contains(element) ? element : ".")
-                    .collect(Collectors.joining("\t"));
+            return Objects.hash(new FloorStats(firstFloorElements), new FloorStats(secondFloorElements), new FloorStats(thirdFloorElements), new FloorStats(fourthFloorElements), numberOfElements, elevatorFloor);
         }
 
         public boolean allElementsIntact() {
-            return floorsMap()
-                    .values()
-                    .stream()
+            return Stream.of(firstFloorElements, secondFloorElements, thirdFloorElements, fourthFloorElements)
                     .allMatch(this::floorElementsIntact);
         }
 
-        private boolean floorElementsIntact(List<String> floorElements) {
-            Set<Character> floorGenerators = new HashSet<>();
-            Set<Character> floorMicrochips = new HashSet<>();
-            floorElements.forEach(floorElement -> {
-                Set<Character> collector;
-                if (floorElement.charAt(1) == 'G') {
-                    collector = floorGenerators;
-                } else {
-                    collector = floorMicrochips;
+        private boolean floorElementsIntact(int floorElements) {
+            boolean containsGenerator = false;
+            boolean containsUnshieldedMicrochip = false;
+            int elements = floorElements;
+            while (elements != 0) {
+                byte lastPair = (byte) (elements & 0x3);
+                switch (lastPair) {
+                    case 3, 1 -> containsGenerator = true;
+                    case 2 -> containsUnshieldedMicrochip = true;
                 }
-                collector.add(floorElement.charAt(0));
-            });
-            if (floorGenerators.isEmpty()) return true;
-            return floorGenerators.containsAll(floorMicrochips);
+                elements >>= 2;
+            }
+            return !containsGenerator || !containsUnshieldedMicrochip;
         }
 
         public boolean allElementsAtLastFloor() {
-            return floorsMap.entrySet().stream()
-                    .allMatch(entry -> (entry.getKey() == lastFloor && !entry.getValue().isEmpty()) || (entry.getKey() != lastFloor && entry.getValue().isEmpty()));
+            return fourthFloorElements == ((1 << 2 * numberOfElements) - 1);
         }
 
-        public List<String> elevatorFloorElements() {
-            return floorsMap.get(elevatorFloor);
+        public Integer elevatorFloorElements() {
+            return switch (elevatorFloor) {
+                case 1 -> firstFloorElements;
+                case 2 -> secondFloorElements;
+                case 3 -> thirdFloorElements;
+                case 4 -> fourthFloorElements;
+                default -> throw new RuntimeException();
+            };
         }
 
-        public Arrangement moveUp(List<String> elements) {
+        public Arrangement moveUp(int elements) {
             return moveToFloor(elements, elevatorFloor + 1);
         }
 
         public boolean canMoveUp() {
-            return elevatorFloor < lastFloor;
+            return elevatorFloor < 4;
         }
 
-        public Arrangement moveDown(List<String> elements) {
+        public Arrangement moveDown(int elements) {
             return moveToFloor(elements, elevatorFloor - 1);
         }
 
         public boolean canMoveDown() {
-            return elevatorFloor > firstFloor;
+            return elevatorFloor > 1;
         }
 
-        private Arrangement moveToFloor(List<String> elements, int nextFloor) {
-            if (nextFloor > lastFloor || nextFloor < firstFloor) throw new RuntimeException();
-            if (elements.isEmpty()) throw new RuntimeException();
-            Map<Integer, List<String>> newFloorsMap = new HashMap<>();
-            floorsMap.forEach((key, value) -> {
-                ArrayList<String> newFloorElements = new ArrayList<>(value);
-                if (key == elevatorFloor) newFloorElements.removeAll(elements);
-                if (key == nextFloor) newFloorElements.addAll(elements);
-                newFloorsMap.put(key, newFloorElements);
-            });
-            return new Arrangement(newFloorsMap, nextFloor, firstFloor, lastFloor);
+        private Arrangement moveToFloor(int elements, int nextFloor) {
+            if (nextFloor > 4 || nextFloor < 1) throw new RuntimeException();
+            if (elements == 0) throw new RuntimeException();
+
+            int firstFloorElementsCopy = firstFloorElements;
+            int secondFloorElementsCopy = secondFloorElements;
+            int thirdFloorElementsCopy = thirdFloorElements;
+            int fourthFloorElementsCopy = fourthFloorElements;
+
+            switch (elevatorFloor) {
+                case 1 -> firstFloorElementsCopy -= elements;
+                case 2 -> secondFloorElementsCopy -= elements;
+                case 3 -> thirdFloorElementsCopy -= elements;
+                case 4 -> fourthFloorElementsCopy -= elements;
+                default -> throw new RuntimeException();
+            }
+
+            switch (nextFloor) {
+                case 1 -> firstFloorElementsCopy += elements;
+                case 2 -> secondFloorElementsCopy += elements;
+                case 3 -> thirdFloorElementsCopy += elements;
+                case 4 -> fourthFloorElementsCopy += elements;
+                default -> throw new RuntimeException();
+            }
+            return new Arrangement(firstFloorElementsCopy, secondFloorElementsCopy, thirdFloorElementsCopy, fourthFloorElementsCopy, numberOfElements, nextFloor);
+        }
+    }
+
+    private record FloorStats(int pairs, int generatorsOnly, int microchipsOnly) {
+        public FloorStats(int floorMap) {
+            int pairs = 0, generatorsOnly = 0, microchipsOnly = 0;
+            while (floorMap != 0) {
+                int element = floorMap & 0b11;
+                switch (element) {
+                    case 0b01 -> generatorsOnly++;
+                    case 0b10 -> microchipsOnly++;
+                    case 0b11 -> pairs++;
+                }
+                floorMap >>= 2;
+            }
+            this(pairs, generatorsOnly, microchipsOnly);
         }
     }
 }
