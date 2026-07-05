@@ -5,7 +5,6 @@ import com.adventofcode.y2016.input.Input;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.OptionalInt;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,17 +28,23 @@ public class Day15 {
     }
 
     private int work(Map<Integer, Disc> discs) {
-        int time = -1;
-        while (soarAwayDiscNumber(++time, discs).isPresent()) ;
-        return time;
+        int modulus = discs.values().stream().mapToInt(Disc::size).reduce(1, (a, b) -> a * b);
+        return discs.values()
+                .stream()
+                .map(disc -> calculateCRTPartial(disc, modulus))
+                .reduce(0, Integer::sum) % modulus;
     }
 
-    private OptionalInt soarAwayDiscNumber(int releaseTime, Map<Integer, Disc> discs) {
-        return discs.entrySet().stream()
-                .filter(discEntry -> discEntry.getValue().soarAway(releaseTime))
-                .sorted(Map.Entry.comparingByKey())
-                .mapToInt(Map.Entry::getKey)
-                .findFirst();
+    public static int calculateCRTPartial(Disc disc, int modulus) {
+        return (disc.size - disc.startPosition - disc.number) //a
+                * (modulus / disc.size) //M
+                * findModularInverse(modulus / disc.size, disc.size); //M^-1
+    }
+
+    private static int findModularInverse(int modular, int modulo) {
+        int modularInverse = -1;
+        while ((modular * (++modularInverse)) % modulo != 1) ;
+        return modularInverse;
     }
 
     public record Disc(int number, int size, int startPosition) {
@@ -53,9 +58,6 @@ public class Day15 {
                         Integer.parseInt(matcher.group(3)));
             throw new IllegalArgumentException("Invalid input line: " + line);
         }
-
-        public boolean soarAway(int releaseTime) {
-            return (startPosition + number + releaseTime) % size != 0;
-        }
     }
+
 }
