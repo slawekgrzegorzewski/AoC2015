@@ -68,8 +68,8 @@ public class Input {
         return Integer.parseInt(getInputFromFile("/y2016/day13").getFirst());
     }
 
-    public static List<String> day14() throws IOException {
-        return getInputFromFile("/y2016/day14");
+    public static String day14() throws IOException {
+        return getInputFromFile("/y2016/day14").getFirst();
     }
 
     public static List<String> day15() throws IOException {
