@@ -1,14 +1,14 @@
 package com.adventofcode.y2016;
 
 import com.adventofcode.y2016.input.Input;
-import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import static java.lang.Integer.numberOfTrailingZeros;
 
 public class Day11 {
 
@@ -33,7 +33,6 @@ public class Day11 {
                 arrangement.secondFloorElements,
                 arrangement.thirdFloorElements,
                 arrangement.fourthFloorElements,
-                arrangement.numberOfElements + 2,
                 1
         );
         return work(arrangement);
@@ -65,18 +64,17 @@ public class Day11 {
     }
 
     private Set<Arrangement> getNextArrangements(Set<Arrangement> allArrangements, Arrangement arrangement) {
-        Set<Arrangement> newChildren = new HashSet<>();
+        Set<Arrangement> newArrangements = new HashSet<>();
         int floorPlan = arrangement.elevatorFloorElements();
-
         for (int cargo = floorPlan; cargo != 0; cargo = clearLowestSetBit(cargo)) {
             int singleElementCargo = lowestSetBitMask(cargo);
-            addChildIfValid(allArrangements, arrangement, newChildren, singleElementCargo);
+            addNewArrangementIfValid(allArrangements, arrangement, newArrangements, singleElementCargo);
             for (int remaining = clearLowestSetBit(cargo); remaining != 0; remaining = clearLowestSetBit(remaining)) {
                 int pairCargo = singleElementCargo | lowestSetBitMask(remaining);
-                addChildIfValid(allArrangements, arrangement, newChildren, pairCargo);
+                addNewArrangementIfValid(allArrangements, arrangement, newArrangements, pairCargo);
             }
         }
-        return newChildren;
+        return newArrangements;
     }
 
     private static int lowestSetBitMask(int number) {
@@ -87,7 +85,7 @@ public class Day11 {
         return number & number - 1;
     }
 
-    private static void addChildIfValid(Set<Arrangement> allArrangements, Arrangement arrangement, Set<Arrangement> newArrangements, int cargo) {
+    private static void addNewArrangementIfValid(Set<Arrangement> allArrangements, Arrangement arrangement, Set<Arrangement> newArrangements, int cargo) {
         if (arrangement.canMoveDown()) {
             Arrangement movedDown = arrangement.moveDown(cargo);
             if (movedDown.allElementsIntact() && !allArrangements.contains(movedDown)) {
@@ -135,7 +133,6 @@ public class Day11 {
                 floorsMapAsInteger.get(2),
                 floorsMapAsInteger.get(3),
                 floorsMapAsInteger.get(4),
-                elementLetters.size(),
                 1);
     }
 
@@ -169,47 +166,40 @@ public class Day11 {
                                int secondFloorElements,
                                int thirdFloorElements,
                                int fourthFloorElements,
+                               FloorStats firstFloorStats,
+                               FloorStats secondFloorStats,
+                               FloorStats thirdFloorStats,
+                               FloorStats fourthFloorStats,
                                int numberOfElements,
-                               int elevatorFloor) {
-        private static final Map<Integer, Byte> OFFSETS = Map.of(
-                1, (byte) 0,
-                2, (byte) 2,
-                3, (byte) 4,
-                4, (byte) 6,
-                5, (byte) 8,
-                6, (byte) 10,
-                7, (byte) 12,
-                8, (byte) 14);
+                               int elevatorFloor,
+                               int hash) {
 
-        @Override
-        @NonNull
-        public String toString() {
-            StringBuilder result = new StringBuilder();
-            List<Integer> floors = List.of(fourthFloorElements, thirdFloorElements, secondFloorElements, firstFloorElements);
-            for (int i = 0; i < floors.size(); i++) {
-                result.append("F")
-                        .append(i + 1)
-                        .append((i + 1) == (elevatorFloor) ? "\tE\t" : "\t.\t")
-                        .append(elementsString(floors.get(i)))
-                        .append(i == floors.size() - 1 ? "" : "\n");
-            }
-            return result.toString();
-        }
-
-        private String elementsString(int value) {
-            StringBuilder sb = new StringBuilder();
-            for (int i = numberOfElements; i > 0; i--) {
-                if (!sb.isEmpty()) sb.append("\t");
-                char elementLetter = (char) ('A' + i - 1);
-                byte elementConfiguration = (byte) ((value >> OFFSETS.get(i)) & 0x3);
-                switch (elementConfiguration) {
-                    case 0 -> sb.append(".\t.");
-                    case 1 -> sb.append(".\t").append(elementLetter).append("G");
-                    case 2 -> sb.append(elementLetter).append("M\t.");
-                    default -> sb.append(elementLetter).append("M\t").append(elementLetter).append("G");
-                }
-            }
-            return sb.toString();
+        public Arrangement(int firstFloorElements,
+                           int secondFloorElements,
+                           int thirdFloorElements,
+                           int fourthFloorElements,
+                           int elevatorFloor) {
+            FloorStats firstFloorStatsToSet = new FloorStats(firstFloorElements);
+            FloorStats secondFloorStatsToSet = new FloorStats(secondFloorElements);
+            FloorStats thirdFloorStatsToSet = new FloorStats(thirdFloorElements);
+            FloorStats fourthFloorStatsToSet = new FloorStats(fourthFloorElements);
+            int numberOfElementsToSet = numberOfTrailingZeros(firstFloorElements + secondFloorElements + thirdFloorElements + fourthFloorElements + 1) / 2;
+            this(firstFloorElements,
+                    secondFloorElements,
+                    thirdFloorElements,
+                    fourthFloorElements,
+                    firstFloorStatsToSet,
+                    secondFloorStatsToSet,
+                    thirdFloorStatsToSet,
+                    fourthFloorStatsToSet,
+                    numberOfElementsToSet,
+                    elevatorFloor,
+                    Objects.hash(firstFloorStatsToSet,
+                            secondFloorStatsToSet,
+                            thirdFloorStatsToSet,
+                            fourthFloorStatsToSet,
+                            numberOfElementsToSet,
+                            elevatorFloor));
         }
 
         @Override
@@ -217,36 +207,22 @@ public class Day11 {
             if (o == null || getClass() != o.getClass()) return false;
             Arrangement that = (Arrangement) o;
             return elevatorFloor == that.elevatorFloor
-                    && numberOfElements == that.numberOfElements
-                    && new FloorStats(firstFloorElements).equals(new FloorStats(that.firstFloorElements))
-                    && new FloorStats(thirdFloorElements).equals(new FloorStats(that.thirdFloorElements))
-                    && new FloorStats(secondFloorElements).equals(new FloorStats(that.secondFloorElements))
-                    && new FloorStats(fourthFloorElements).equals(new FloorStats(that.fourthFloorElements));
+                    && firstFloorStats.equals(that.firstFloorStats)
+                    && secondFloorStats.equals(that.secondFloorStats)
+                    && thirdFloorStats.equals(that.thirdFloorStats)
+                    && fourthFloorStats.equals(that.fourthFloorStats);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(new FloorStats(firstFloorElements), new FloorStats(secondFloorElements), new FloorStats(thirdFloorElements), new FloorStats(fourthFloorElements), numberOfElements, elevatorFloor);
+            return hash;
         }
 
         public boolean allElementsIntact() {
-            return Stream.of(firstFloorElements, secondFloorElements, thirdFloorElements, fourthFloorElements)
-                    .allMatch(this::floorElementsIntact);
-        }
-
-        private boolean floorElementsIntact(int floorElements) {
-            boolean containsGenerator = false;
-            boolean containsUnshieldedMicrochip = false;
-            int elements = floorElements;
-            while (elements != 0) {
-                byte lastPair = (byte) (elements & 0x3);
-                switch (lastPair) {
-                    case 3, 1 -> containsGenerator = true;
-                    case 2 -> containsUnshieldedMicrochip = true;
-                }
-                elements >>= 2;
-            }
-            return !containsGenerator || !containsUnshieldedMicrochip;
+            return firstFloorStats.isIntact()
+                    && secondFloorStats.isIntact()
+                    && thirdFloorStats.isIntact()
+                    && fourthFloorStats.isIntact();
         }
 
         public boolean allElementsAtLastFloor() {
@@ -263,63 +239,59 @@ public class Day11 {
             };
         }
 
-        public Arrangement moveUp(int elements) {
-            return moveToFloor(elements, elevatorFloor + 1);
-        }
-
         public boolean canMoveUp() {
             return elevatorFloor < 4;
         }
 
-        public Arrangement moveDown(int elements) {
-            return moveToFloor(elements, elevatorFloor - 1);
+        public Arrangement moveUp(int elements) {
+            return moveToFloor(elements, elevatorFloor + 1);
         }
 
         public boolean canMoveDown() {
             return elevatorFloor > 1;
         }
 
+        public Arrangement moveDown(int elements) {
+            return moveToFloor(elements, elevatorFloor - 1);
+        }
+
         private Arrangement moveToFloor(int elements, int nextFloor) {
             if (nextFloor > 4 || nextFloor < 1) throw new RuntimeException();
             if (elements == 0) throw new RuntimeException();
-
-            int firstFloorElementsCopy = firstFloorElements;
-            int secondFloorElementsCopy = secondFloorElements;
-            int thirdFloorElementsCopy = thirdFloorElements;
-            int fourthFloorElementsCopy = fourthFloorElements;
-
-            switch (elevatorFloor) {
-                case 1 -> firstFloorElementsCopy -= elements;
-                case 2 -> secondFloorElementsCopy -= elements;
-                case 3 -> thirdFloorElementsCopy -= elements;
-                case 4 -> fourthFloorElementsCopy -= elements;
-                default -> throw new RuntimeException();
-            }
-
-            switch (nextFloor) {
-                case 1 -> firstFloorElementsCopy += elements;
-                case 2 -> secondFloorElementsCopy += elements;
-                case 3 -> thirdFloorElementsCopy += elements;
-                case 4 -> fourthFloorElementsCopy += elements;
-                default -> throw new RuntimeException();
-            }
-            return new Arrangement(firstFloorElementsCopy, secondFloorElementsCopy, thirdFloorElementsCopy, fourthFloorElementsCopy, numberOfElements, nextFloor);
+            int[] floors = {firstFloorElements, secondFloorElements, thirdFloorElements, fourthFloorElements};
+            floors[elevatorFloor - 1] -= elements;
+            floors[nextFloor - 1] += elements;
+            return new Arrangement(floors[0], floors[1], floors[2], floors[3], nextFloor);
         }
     }
 
     private record FloorStats(int pairs, int generatorsOnly, int microchipsOnly) {
+
+        private static final int GENERATOR_MASK = 0b1010101010101010101010101010101;
+        private static final int MICROCHIP_MASK = 0b10101010101010101010101010101010;
+
         public FloorStats(int floorMap) {
-            int pairs = 0, generatorsOnly = 0, microchipsOnly = 0;
-            while (floorMap != 0) {
-                int element = floorMap & 0b11;
-                switch (element) {
-                    case 0b01 -> generatorsOnly++;
-                    case 0b10 -> microchipsOnly++;
-                    case 0b11 -> pairs++;
-                }
-                floorMap >>= 2;
-            }
-            this(pairs, generatorsOnly, microchipsOnly);
+            int pairs = Integer.bitCount(floorMap & (floorMap >> 1) & GENERATOR_MASK);
+            int totalGenerators = Integer.bitCount(floorMap & GENERATOR_MASK);
+            int totalMicrochips = Integer.bitCount(floorMap & MICROCHIP_MASK);
+            if (pairs > 7 || totalGenerators > 7 || totalMicrochips > 7)
+                throw new RuntimeException();
+            this(pairs, totalGenerators - pairs, totalMicrochips - pairs);
+        }
+
+        public boolean isIntact() {
+            return microchipsOnly == 0 || generatorsOnly == 0;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            return hashCode() == o.hashCode();
+        }
+
+        @Override
+        public int hashCode() {
+            return pairs | generatorsOnly << 3 | microchipsOnly << 6;
         }
     }
 }
