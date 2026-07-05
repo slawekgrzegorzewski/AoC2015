@@ -1,10 +1,14 @@
 package com.adventofcode.y2016.input;
 
+import com.adventofcode.y2016.Day15;
 import com.google.common.base.Splitter;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.adventofcode.Utils.getInputFromFile;
 
@@ -72,8 +76,14 @@ public class Input {
         return getInputFromFile("/y2016/day14").getFirst();
     }
 
-    public static List<String> day15() throws IOException {
-        return getInputFromFile("/y2016/day15");
+    public static Map<Integer, Day15.Disc> day15() throws IOException {
+        return getInputFromFile("/y2016/day15")
+                .stream()
+                .map(Day15.Disc::parse)
+                .collect(Collectors.toMap(
+                        Day15.Disc::number,
+                        Function.identity()
+                ));
     }
 
     public static List<String> day16() throws IOException {
