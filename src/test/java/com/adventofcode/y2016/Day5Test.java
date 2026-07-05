@@ -14,7 +14,7 @@ class Day5Test {
     static Day5 day5;
 
     @BeforeAll
-    public static void init() throws IOException {
+    public static void init() throws IOException, NoSuchAlgorithmException {
         day5 = new Day5();
     }
 

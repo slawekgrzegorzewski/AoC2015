@@ -11,6 +11,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Day14 {
+    private static final char[] HEX_DIGITS = "0123456789abcdef".toCharArray();
+
     private final String salt;
 
 
@@ -20,6 +22,10 @@ public class Day14 {
 
     long part1() throws NoSuchAlgorithmException {
         return work(1);
+    }
+
+    long part2() {
+        return work(2017);
     }
 
     private int work(int repeat) {
@@ -60,15 +66,12 @@ public class Day14 {
     private record HashStats(String threeCharacter, List<String> fiveCharacters) {
     }
 
-    long part2() {
-        return work(2017);
-    }
-
     private String md5(int index, int repeat) {
         try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
             String value = salt + index;
             for (int i = 0; i < repeat; i++) {
-                value = md5(value);
+                value = md5(value, md);
             }
             return value;
         } catch (NoSuchAlgorithmException e) {
@@ -76,13 +79,15 @@ public class Day14 {
         }
     }
 
-    private String md5(String value) throws NoSuchAlgorithmException {
-        MessageDigest md = md = MessageDigest.getInstance("MD5");
+    private String md5(String value, MessageDigest md) {
+        md.reset();
         byte[] hash = md.digest(value.getBytes(StandardCharsets.UTF_8));
-        StringBuilder hex = new StringBuilder(hash.length * 2);
-        for (byte b : hash) {
-            hex.append(String.format("%02x", b & 0xff));
+        char[] hex = new char[hash.length * 2];
+        for (int i = 0, j = 0; i < hash.length; i++) {
+            int b = hash[i] & 0xff;
+            hex[j++] = HEX_DIGITS[b >>> 4];
+            hex[j++] = HEX_DIGITS[b & 0x0f];
         }
-        return hex.toString();
+        return new String(hex);
     }
 }
