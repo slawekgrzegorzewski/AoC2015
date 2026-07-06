@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.google.common.math.IntMath.gcd;
+
 public class Day15 {
     private final Map<Integer, Disc> discs;
 
@@ -28,6 +30,9 @@ public class Day15 {
     }
 
     private int work(Map<Integer, Disc> discs) {
+        //t + start_position + disk_number === 0 (mod disk_size)
+        //t === (-start_position - disk_number)(mod disk_size)
+        //t === (disk_size - start_position - disk_number)(mod disk_size)
         int modulus = discs.values().stream().mapToInt(Disc::size).reduce(1, (a, b) -> a * b);
         return discs.values()
                 .stream()
@@ -42,6 +47,7 @@ public class Day15 {
     }
 
     private static int findModularInverse(int modular, int modulo) {
+        if (gcd(modular, modulo) != 1) throw new RuntimeException();
         int modularInverse = -1;
         while ((modular * (++modularInverse)) % modulo != 1) ;
         return modularInverse;
