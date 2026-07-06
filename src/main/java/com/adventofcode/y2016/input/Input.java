@@ -90,8 +90,8 @@ public class Input {
         return getInputFromFile("/y2016/day16").getFirst().toCharArray();
     }
 
-    public static List<String> day17() throws IOException {
-        return getInputFromFile("/y2016/day17");
+    public static String day17() throws IOException {
+        return getInputFromFile("/y2016/day17").getFirst();
     }
 
     public static List<String> day18() throws IOException {
