@@ -1,12 +1,11 @@
 package com.adventofcode.y2016;
 
 import com.adventofcode.y2016.input.Input;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.regex.Pattern;
+import java.util.Optional;
 
 public class Day12 {
     private final List<Command> compiledCode;
@@ -22,38 +21,85 @@ public class Day12 {
     }
 
     public static Command compileCommand(String command) {
-        Predicate<String> integerPattern = Pattern.compile("-?\\d+").asMatchPredicate();
         String[] commandParts = command.split(" ");
-        switch (commandParts[0]) {
-            case "cpy" -> {
-                return new TwoArgumentsCommand(
-                        "cpy",
-                        (program, programState, arg1, arg2) -> programState.setRegister(arg2.getVariableName(), arg1.getValue(programState)).forwardPointer(1),
-                        Argument.parse(commandParts[1]),
-                        Argument.parse(commandParts[2]));
-            }
-            case "inc" -> {
-                return new OneArgumentCommand(
-                        "inc",
-                        (program, programState, arg1) -> programState.setRegister(arg1.getVariableName(), arg1.getValue(programState) + 1).forwardPointer(1),
-                        Argument.parse(commandParts[1]));
+        return switch (commandParts[0]) {
+            case "cpy" -> cpy(commandParts);
+            case "inc" -> inc(commandParts);
+            case "dec" -> dec(commandParts);
+            case "jnz" -> jnz(commandParts);
+            case "tgl" -> tgl(commandParts);
+            default -> throw new IllegalStateException("Unexpected value: " + commandParts[0]);
+        };
+    }
 
-            }
-            case "dec" -> {
-                return new OneArgumentCommand(
-                        "inc",
-                        (program, programState, arg1) -> programState.setRegister(arg1.getVariableName(), arg1.getValue(programState) - 1).forwardPointer(1),
-                        Argument.parse(commandParts[1]));
-            }
-            case "jnz" -> {
-                return new TwoArgumentsCommand(
-                        "jnz",
-                        (program, programState, arg1, arg2) -> programState.forwardPointer(arg1.getValue(programState) == 0 ? 1 : arg2.getValue(programState)),
-                        Argument.parse(commandParts[1]),
-                        Argument.parse(commandParts[2]));
-            }
-        }
-        throw new IllegalArgumentException("Invalid instruction");
+    private static @NonNull TwoArgumentsCommand jnz(String[] commandParts) {
+        return jnz(Argument.parse(commandParts[1]), Argument.parse(commandParts[2]));
+    }
+
+    private static @NonNull TwoArgumentsCommand jnz(Argument argument1, Argument argument2) {
+        return new TwoArgumentsCommand(
+                "jnz",
+                (program, programState, arg1, arg2) -> programState.forwardPointer(arg1.getValue(programState) == 0 ? 1 : arg2.getValue(programState)),
+                argument1,
+                argument2);
+    }
+
+    private static @NonNull OneArgumentCommand dec(String[] commandParts) {
+        return dec(Argument.parse(commandParts[1]));
+    }
+
+    private static @NonNull OneArgumentCommand dec(Argument argument) {
+        return new OneArgumentCommand(
+                "dec",
+                (program, programState, arg1) -> {
+                    if (arg1.getVariableName().isPresent())
+                        programState = programState.setRegister(arg1.getVariableName().orElseThrow(), arg1.getValue(programState) - 1);
+                    return programState.forwardPointer(1);
+                },
+                argument);
+    }
+
+    private static @NonNull TwoArgumentsCommand cpy(String[] commandParts) {
+        return cpy(Argument.parse(commandParts[1]), Argument.parse(commandParts[2]));
+    }
+
+    private static @NonNull TwoArgumentsCommand cpy(Argument argument1, Argument argument2) {
+        return new TwoArgumentsCommand(
+                "cpy",
+                (program, programState, arg1, arg2) -> {
+                    if (arg2.getVariableName().isPresent())
+                        programState = programState.setRegister(arg2.getVariableName().orElseThrow(), arg1.getValue(programState));
+                    return programState.forwardPointer(1);
+                },
+                argument1,
+                argument2);
+    }
+
+    private static @NonNull OneArgumentCommand inc(String[] commandParts) {
+        return inc(Argument.parse(commandParts[1]));
+    }
+
+    private static @NonNull OneArgumentCommand inc(Argument argument) {
+        return new OneArgumentCommand(
+                "inc",
+                (program, programState, arg1) -> {
+                    if (arg1.getVariableName().isPresent())
+                        programState = programState.setRegister(arg1.getVariableName().orElseThrow(), arg1.getValue(programState) + 1);
+                    return programState.forwardPointer(1);
+                },
+                argument);
+    }
+
+    private static @NonNull OneArgumentCommand tgl(String[] commandParts) {
+        return new OneArgumentCommand(
+                commandParts[0],
+                (program, programState, arg1) -> {
+                    int commandToReplaceIndex = programState.instructionIndex() + arg1.getValue(programState);
+                    if (commandToReplaceIndex >= 0 && commandToReplaceIndex < program.size())
+                        program.set(commandToReplaceIndex, program.get(commandToReplaceIndex).toggle());
+                    return programState.forwardPointer(1);
+                },
+                Argument.parse(commandParts[1]));
     }
 
     long part1() throws IOException {
@@ -111,6 +157,8 @@ public class Day12 {
         }
 
         public abstract ProgramState execute(List<Command> program, ProgramState state);
+
+        public abstract Command toggle();
     }
 
     public static class OneArgumentCommand extends Command {
@@ -126,6 +174,16 @@ public class Day12 {
         @Override
         public ProgramState execute(List<Command> program, ProgramState state) {
             return executor.execute(program, state, argument);
+        }
+
+        @Override
+        public Command toggle() {
+            return switch (command) {
+                case "inc" -> dec(argument);
+                case "dec" -> inc(argument);
+                case "tgl" -> inc(argument);
+                default -> throw new IllegalStateException("Unexpected value: " + command);
+            };
         }
     }
 
@@ -146,12 +204,21 @@ public class Day12 {
         public ProgramState execute(List<Command> program, ProgramState state) {
             return executor.execute(program, state, argument1, argument2);
         }
+
+        @Override
+        public Command toggle() {
+            return switch (command) {
+                case "cpy" -> jnz(argument1, argument2);
+                case "jnz" -> cpy(argument1, argument2);
+                default -> throw new IllegalStateException("Unexpected value: " + command);
+            };
+        }
     }
 
     public static abstract class Argument {
         public abstract int getValue(ProgramState state);
 
-        public abstract String getVariableName();
+        public abstract Optional<String> getVariableName();
 
         public static Argument parse(String argument) {
             if (argument.matches("[a-d]")) {
@@ -174,8 +241,8 @@ public class Day12 {
         }
 
         @Override
-        public String getVariableName() {
-            throw new UnsupportedOperationException();
+        public Optional<String> getVariableName() {
+            return Optional.empty();
         }
     }
 
@@ -192,8 +259,8 @@ public class Day12 {
         }
 
         @Override
-        public String getVariableName() {
-            return register;
+        public Optional<String> getVariableName() {
+            return Optional.of(register);
         }
     }
 
