@@ -2,6 +2,7 @@ package com.adventofcode.y2016.input;
 
 import com.adventofcode.y2016.Day15;
 import com.adventofcode.y2016.Day20;
+import com.adventofcode.y2016.Day22;
 import com.google.common.base.Splitter;
 
 import java.io.IOException;
@@ -119,8 +120,12 @@ public class Input {
         return getInputFromFile("/y2016/day21");
     }
 
-    public static List<String> day22() throws IOException {
-        return getInputFromFile("/y2016/day22");
+    public static List<Day22.Node> day22() throws IOException {
+        return getInputFromFile("/y2016/day22")
+                .stream()
+                .skip(2)
+                .map(Day22.Node::parse)
+                .toList();
     }
 
     public static List<String> day23() throws IOException {
