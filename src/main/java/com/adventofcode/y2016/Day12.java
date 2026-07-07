@@ -4,6 +4,7 @@ import com.adventofcode.y2016.input.Input;
 import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,11 +17,11 @@ public class Day12 {
 
     private List<Command> compile(List<String> commands) {
         return commands.stream()
-                .map(Day12::compileCommand)
+                .map(command -> compileCommand(command, new ArrayList<>()))
                 .toList();
     }
 
-    public static Command compileCommand(String command) {
+    public static Command compileCommand(String command, List<String> out) {
         String[] commandParts = command.split(" ");
         return switch (commandParts[0]) {
             case "cpy" -> cpy(commandParts);
@@ -28,6 +29,7 @@ public class Day12 {
             case "dec" -> dec(commandParts);
             case "jnz" -> jnz(commandParts);
             case "tgl" -> tgl(commandParts);
+            case "out" -> out(commandParts, out);
             default -> throw new IllegalStateException("Unexpected value: " + commandParts[0]);
         };
     }
@@ -100,6 +102,20 @@ public class Day12 {
                     return programState.forwardPointer(1);
                 },
                 Argument.parse(commandParts[1]));
+    }
+
+    private static @NonNull OneArgumentCommand out(String[] commandParts, List<String> out) {
+        return out(Argument.parse(commandParts[1]), out);
+    }
+
+    private static @NonNull OneArgumentCommand out(Argument argument, List<String> out) {
+        return new OneArgumentCommand(
+                "out",
+                (program, programState, arg1) -> {
+                    out.add(String.valueOf(arg1.getValue(programState)));
+                    return programState.forwardPointer(1);
+                },
+                argument);
     }
 
     long part1() throws IOException {

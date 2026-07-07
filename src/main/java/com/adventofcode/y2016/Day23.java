@@ -13,7 +13,7 @@ public class Day23 {
 
     public Day23() throws IOException {
         this.compiledCode = Input.day23().stream()
-                .map(Day12::compileCommand)
+                .map(command -> Day12.compileCommand(command, new ArrayList<>()))
                 .toList();
     }
 
@@ -26,12 +26,9 @@ public class Day23 {
     }
 
     private int executeProgram(List<Day12.Command> program, Day12.ProgramState state) {
-        int steps = 0;
         while (state.instructionIndex() >= 0 && state.instructionIndex() < program.size()) {
             state = program.get(state.instructionIndex()).execute(program, state);
-            steps++;
         }
-        System.out.println("steps = " + steps);
         return state.a();
     }
 }
