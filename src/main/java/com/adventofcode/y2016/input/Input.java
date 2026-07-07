@@ -94,8 +94,13 @@ public class Input {
         return getInputFromFile("/y2016/day17").getFirst();
     }
 
-    public static List<String> day18() throws IOException {
-        return getInputFromFile("/y2016/day18");
+    public static boolean[] day18() throws IOException {
+        char[] charArray = getInputFromFile("/y2016/day18").getFirst().toCharArray();
+        boolean[] result = new boolean[charArray.length];
+        for (int i = 0; i < charArray.length; i++) {
+            result[i] = charArray[i] == '.';
+        }
+        return result;
     }
 
     public static List<String> day19() throws IOException {
