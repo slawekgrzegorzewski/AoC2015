@@ -19,8 +19,8 @@ public class Input {
                 .toList();
     }
 
-    public static List<String> day3() throws IOException {
-        return getInputFromFile("/y2017/day3");
+    public static int day3() throws IOException {
+        return Integer.parseInt(getInputFromFile("/y2017/day3").getFirst());
     }
 
     public static List<String> day4() throws IOException {
