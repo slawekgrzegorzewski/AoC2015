@@ -7,8 +7,8 @@ import static com.adventofcode.Utils.getInputFromFile;
 
 public class Input {
 
-    public static List<String> day1() throws IOException {
-        return getInputFromFile("/y2017/day1");
+    public static char[] day1() throws IOException {
+        return getInputFromFile("/y2017/day1").getFirst().toCharArray();
     }
 
     public static List<String> day2() throws IOException {
