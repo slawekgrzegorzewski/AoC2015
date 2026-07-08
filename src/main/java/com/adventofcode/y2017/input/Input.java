@@ -1,6 +1,7 @@
 package com.adventofcode.y2017.input;
 
 import com.adventofcode.y2017.Day7;
+import com.adventofcode.y2017.Day8;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -55,8 +56,11 @@ public class Input {
                 .toList();
     }
 
-    public static List<String> day8() throws IOException {
-        return getInputFromFile("/y2017/day8");
+    public static List<Day8.Instruction> day8() throws IOException {
+        return getInputFromFile("/y2017/day8")
+                .stream()
+                .map(Day8.Instruction::parse)
+                .toList();
     }
 
     public static List<String> day9() throws IOException {

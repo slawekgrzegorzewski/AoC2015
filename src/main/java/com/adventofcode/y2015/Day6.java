@@ -30,7 +30,7 @@ public class Day6 {
             case "turn on" -> v -> v + 1;
             case "turn off" -> v -> v > 0 ? v - 1 : 0;
             case "toggle" -> v -> v + 2;
-            default -> throw new IllegalStateException("Unknown operation: " + litInstruction.operation());
+            default -> throw new IllegalStateException("Unknown comarator: " + litInstruction.operation());
         });
     }
 

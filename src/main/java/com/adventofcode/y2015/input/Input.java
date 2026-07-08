@@ -40,7 +40,7 @@ public class Input {
                     if (line.startsWith("turn on")) operation = "turn on";
                     else if (line.startsWith("turn off")) operation = "turn off";
                     else if (line.startsWith("toggle")) operation = "toggle";
-                    else throw new IllegalStateException("Unknown operation: " + line);
+                    else throw new IllegalStateException("Unknown comarator: " + line);
                     line = line.replace(operation + " ", "");
                     String[] parts = line.split(" through ");
                     String[] leftTopParts = parts[0].split(",");
