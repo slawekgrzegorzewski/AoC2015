@@ -3,6 +3,7 @@ package com.adventofcode.y2017.input;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.adventofcode.Utils.getInputFromFile;
 
@@ -23,8 +24,11 @@ public class Input {
         return Integer.parseInt(getInputFromFile("/y2017/day3").getFirst());
     }
 
-    public static List<String> day4() throws IOException {
-        return getInputFromFile("/y2017/day4");
+    public static List<List<String>> day4() throws IOException {
+        return getInputFromFile("/y2017/day4")
+                .stream()
+                .map(line -> Arrays.stream(line.split("\\s+")).toList())
+                .collect(Collectors.toList());
     }
 
     public static List<String> day5() throws IOException {
