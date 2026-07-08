@@ -31,8 +31,11 @@ public class Input {
                 .collect(Collectors.toList());
     }
 
-    public static List<String> day5() throws IOException {
-        return getInputFromFile("/y2017/day5");
+    public static int[] day5() throws IOException {
+        return getInputFromFile("/y2017/day5")
+                .stream()
+                .mapToInt(Integer::parseInt)
+                .toArray();
     }
 
     public static List<String> day6() throws IOException {

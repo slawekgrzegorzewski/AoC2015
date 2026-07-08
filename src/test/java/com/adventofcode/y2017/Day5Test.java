@@ -19,11 +19,11 @@ class Day5Test {
 
     @Test
     void testPart1() {
-        assertEquals(0L, day5.part1());
+        assertEquals(372671L, day5.part1());
     }
 
     @Test
     void testPart2() {
-        assertEquals(0L, day5.part2());
+        assertEquals(25608480L, day5.part2());
     }
 }
