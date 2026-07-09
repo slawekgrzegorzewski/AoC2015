@@ -7,6 +7,7 @@ import com.adventofcode.y2017.Day8;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.adventofcode.Utils.getInputFromFile;
@@ -80,8 +81,16 @@ public class Input {
                 .toList();
     }
 
-    public static List<String> day12() throws IOException {
-        return getInputFromFile("/y2017/day12");
+    public static Map<Integer, List<Integer>> day12() throws IOException {
+        return getInputFromFile("/y2017/day12")
+                .stream()
+                .map(line -> line.split(" <-> "))
+                .collect(Collectors.toMap(
+                        parts -> Integer.parseInt(parts[0]),
+                        parts -> Arrays.stream(parts[1].split(", "))
+                                .map(Integer::parseInt)
+                                .toList()
+                ));
     }
 
     public static List<String> day13() throws IOException {
