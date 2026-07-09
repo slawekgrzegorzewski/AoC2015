@@ -1,11 +1,8 @@
 package com.adventofcode.y2017;
 
 import com.adventofcode.y2017.input.Input;
-import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.Arrays;
 
 public class Day10 {
