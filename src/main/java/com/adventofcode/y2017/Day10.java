@@ -1,6 +1,7 @@
 package com.adventofcode.y2017;
 
 import com.adventofcode.y2017.input.Input;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -20,42 +21,31 @@ public class Day10 {
         int[] lengthsParsed = Arrays.stream(lenghts.split(","))
                 .mapToInt(Integer::parseInt)
                 .toArray();
-        int length = 256;
-        int[] list = new int[length];
-        for (int i = 0; i < list.length; i++) {
-            list[i] = i;
-        }
+        int[] list = inputList();
         rotate(lengthsParsed, list, 1);
         return (long) list[0] * list[1];
     }
 
     String part2() {
         byte[] bytes = lenghts.getBytes();
+        int[] list = inputList();
         int[] lengths = new int[bytes.length + 5];
+        for (int i = 0; i < bytes.length; i++) {
+            lengths[i] = bytes[i];
+        }
+        System.arraycopy(new int[]{17, 31, 73, 47, 23}, 0, lengths, bytes.length, 5);
+        rotate(lengths, list, 64);
+        int[] denseHash = denseHash(list);
+        return convertToHexString(denseHash);
+    }
+
+    private static int[] inputList() {
         int length = 256;
         int[] list = new int[length];
         for (int i = 0; i < list.length; i++) {
             list[i] = i;
         }
-        for (int i = 0; i < bytes.length; i++) {
-            lengths[i] = bytes[i];
-        }
-        lengths[bytes.length] = 17;
-        lengths[bytes.length + 1] = 31;
-        lengths[bytes.length + 2] = 73;
-        lengths[bytes.length + 3] = 47;
-        lengths[bytes.length + 4] = 23;
-        rotate(lengths, list, 64);
-        int [] denseHash = new int[16];
-        for (int i = 0; i < denseHash.length; i++) {
-            int start = i * 16;
-            int xor = list[start];
-            for (int j = start + 1; j < start + 16; j++) {
-                xor ^= list[j];
-            }
-            denseHash[i] = xor;
-        }
-        return convertToHexString(denseHash);
+        return list;
     }
 
     private static void rotate(int[] lengthsParsed, int[] list, int rounds) {
@@ -79,6 +69,20 @@ public class Day10 {
             }
         }
     }
+
+    private static int[] denseHash(int[] list) {
+        int[] denseHash = new int[16];
+        for (int i = 0; i < denseHash.length; i++) {
+            int start = i * 16;
+            int xor = list[start];
+            for (int j = start + 1; j < start + 16; j++) {
+                xor ^= list[j];
+            }
+            denseHash[i] = xor;
+        }
+        return denseHash;
+    }
+
     private String convertToHexString(int[] denseHash) {
         char[] hex = new char[32];
         for (int i = 0, j = 0; j < 32; i++) {
