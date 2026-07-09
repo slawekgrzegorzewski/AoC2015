@@ -1,12 +1,13 @@
 package com.adventofcode.y2017;
 
 import com.adventofcode.y2017.input.Input;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.util.Arrays;
 
 public class Day10 {
-    private static final char[] HEX_DIGITS = "0123456789abcdef".toCharArray();
+    public static final char[] HEX_DIGITS = "0123456789abcdef".toCharArray();
     private final String lenghts;
 
 
@@ -24,7 +25,11 @@ public class Day10 {
     }
 
     String part2() {
-        byte[] bytes = lenghts.getBytes();
+        return knotHash(lenghts);
+    }
+
+    public static @NonNull String knotHash(String key) {
+        byte[] bytes = key.getBytes();
         int[] list = inputList();
         int[] lengths = new int[bytes.length + 5];
         for (int i = 0; i < bytes.length; i++) {
@@ -32,7 +37,7 @@ public class Day10 {
         }
         System.arraycopy(new int[]{17, 31, 73, 47, 23}, 0, lengths, bytes.length, 5);
         rotate(lengths, list, 64);
-        int[] denseHash = denseHash(list);
+        byte[] denseHash = denseHash(list);
         return convertToHexString(denseHash);
     }
 
@@ -67,20 +72,20 @@ public class Day10 {
         }
     }
 
-    private static int[] denseHash(int[] list) {
-        int[] denseHash = new int[16];
+    private static byte[] denseHash(int[] list) {
+        byte[] denseHash = new byte[16];
         for (int i = 0; i < denseHash.length; i++) {
             int start = i * 16;
             int xor = list[start];
             for (int j = start + 1; j < start + 16; j++) {
                 xor ^= list[j];
             }
-            denseHash[i] = xor;
+            denseHash[i] = (byte) (xor & 0xff);
         }
         return denseHash;
     }
 
-    private String convertToHexString(int[] denseHash) {
+    private static String convertToHexString(byte[] denseHash) {
         char[] hex = new char[32];
         for (int i = 0, j = 0; j < 32; i++) {
             int b = denseHash[i] & 0xff;
