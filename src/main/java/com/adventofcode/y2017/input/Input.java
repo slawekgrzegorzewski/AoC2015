@@ -93,8 +93,14 @@ public class Input {
                 ));
     }
 
-    public static List<String> day13() throws IOException {
-        return getInputFromFile("/y2017/day13");
+    public static Map<Integer, Integer> day13() throws IOException {
+        return getInputFromFile("/y2017/day13")
+                .stream()
+                .map(line -> line.split(": "))
+                .collect(Collectors.toMap(
+                        parts -> Integer.parseInt(parts[0]),
+                        parts -> Integer.parseInt(parts[1])
+                ));
     }
 
     public static List<String> day14() throws IOException {
