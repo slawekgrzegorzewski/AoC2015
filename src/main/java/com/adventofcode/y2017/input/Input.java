@@ -116,7 +116,10 @@ public class Input {
     }
 
     public static List<String> day16() throws IOException {
-        return getInputFromFile("/y2017/day16");
+        return Arrays.stream(getInputFromFile("/y2017/day16")
+                .getFirst()
+                .split(","))
+                .toList();
     }
 
     public static List<String> day17() throws IOException {
