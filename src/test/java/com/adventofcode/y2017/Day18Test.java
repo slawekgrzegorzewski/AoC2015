@@ -19,11 +19,11 @@ class Day18Test {
 
     @Test
     void testPart1() {
-        assertEquals(0L, day18.part1());
+        assertEquals(4601L, day18.part1());
     }
 
     @Test
-    void testPart2() {
-        assertEquals(0L, day18.part2());
+    void testPart2() throws InterruptedException {
+        assertEquals(6858L, day18.part2());
     }
 }
