@@ -5,13 +5,15 @@ import com.adventofcode.y2017.input.Input;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.math.RoundingMode;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Day20 {
+    private static final MathContext mc = new MathContext(4, RoundingMode.HALF_UP);
     private final List<Day20.Particle> particles;
-
 
     public Day20() throws IOException {
         this.particles = Input.day20();
@@ -40,7 +42,7 @@ public class Day20 {
         List<ParticleCoordinatesEquations> particleEquations = particles.stream()
                 .map(Day20::mapToPositionEquations)
                 .toList();
-        Map<Integer, Map<Triple, List<ParticleCoordinatesEquations>>> intersections = new HashMap<>();
+        Map<Integer, Map<Triple, List<Particle>>> intersections = new HashMap<>();
         for (int i = 0; i < particleEquations.size(); i++) {
             ParticleCoordinatesEquations firstParticleEquations = particleEquations.get(i);
             for (int j = i + 1; j < particleEquations.size(); j++) {
@@ -50,31 +52,33 @@ public class Day20 {
                     Triple triple1 = calculate(intersection, firstParticleEquations);
                     Triple triple2 = calculate(intersection, secondParticleEquations);
                     if (triple1.equals(triple2)) {
-                        List<ParticleCoordinatesEquations> equations = intersections.computeIfAbsent(intersection, k -> new HashMap<>())
-                                .computeIfAbsent(triple1, k -> new ArrayList<>());
-                        equations.add(firstParticleEquations);
-                        equations.add(secondParticleEquations);
+                        List<Particle> equations = intersections
+                                .computeIfAbsent(intersection, _ -> new HashMap<>())
+                                .computeIfAbsent(triple1, _ -> new ArrayList<>());
+                        equations.add(firstParticleEquations.particle);
+                        equations.add(secondParticleEquations.particle);
                     } else {
                         throw new IllegalStateException("Particles intersect at the same time but have different positions");
                     }
                 }
             }
         }
+        List<Particle> allParticles = particleEquations.stream()
+                .map(ParticleCoordinatesEquations::particle)
+                .collect(Collectors.toCollection(ArrayList::new));
         intersections
                 .entrySet()
                 .stream()
                 .sorted(Map.Entry.comparingByKey())
-                .flatMap(entry -> entry.getValue().values().stream())
-                .forEach(equations -> {
-                    for (int i = 0; i < equations.size(); i++) {
-                        if (!particleEquations.contains(equations.get(i))){
-                            equations.remove(i);
-                        }
-                    }
+                .map(entry -> entry.getValue().values())
+                .forEach(particlesList -> {
+                    particlesList
+                            .forEach(particles1 -> particles1.removeIf(Predicate.not(allParticles::contains)));
+                    particlesList.stream()
+                            .filter(list -> list.size() > 1)
+                            .forEach(list -> list.forEach(allParticles::remove));
                 });
-
-
-        return 0L;
+        return allParticles.size();
     }
 
     private Triple calculate(int intersection, ParticleCoordinatesEquations firstParticleEquations) {
@@ -109,9 +113,11 @@ public class Day20 {
     private List<Integer> solve(QuadraticEquation equation) {
         List<BigDecimal> solutions = new ArrayList<>();
         BigDecimal delta = equation.b.multiply(equation.b).subtract(BigDecimal.valueOf(4).multiply(equation.a).multiply(equation.c));
+        BigDecimal aDoubled = BigDecimal.valueOf(2).multiply(equation.a);
+        BigDecimal bNegated = equation.b.negate();
         if (equation.a.signum() == 0) {
             if (equation.b.signum() != 0)
-                solutions.add(equation.c.negate().divide(equation.b, MathContext.DECIMAL128));
+                solutions.add(equation.c.negate().divide(equation.b, mc));
             else {
                 if (equation.c.signum() == 0) {
                     ArrayList<Integer> result = new ArrayList<>();
@@ -120,14 +126,15 @@ public class Day20 {
                 }
             }
         } else if (delta.signum() > 0) {
-            solutions.add(equation.b.negate().subtract(delta.sqrt(MathContext.DECIMAL128)).divide(BigDecimal.valueOf(2).multiply(equation.a), MathContext.DECIMAL128));
-            solutions.add(equation.b.negate().add(delta.sqrt(MathContext.DECIMAL128)).divide(BigDecimal.valueOf(2).multiply(equation.a), MathContext.DECIMAL128));
+            BigDecimal deltaSqrt = delta.sqrt(mc);
+            solutions.add(bNegated.subtract(deltaSqrt).divide(aDoubled, mc));
+            solutions.add(bNegated.add(deltaSqrt).divide(aDoubled, mc));
         } else if (delta.signum() == 0) {
-            solutions.add(equation.b.negate().divide(BigDecimal.valueOf(2).multiply(equation.a), MathContext.DECIMAL128));
+            solutions.add(bNegated.divide(aDoubled, mc));
         }
         return solutions.stream()
-                .filter(s -> s.stripTrailingZeros().scale() <= 0)
                 .filter(bigDecimal -> bigDecimal.signum() != 0)
+                .filter(s -> s.stripTrailingZeros().scale() <= 0)
                 .map(BigDecimal::intValueExact)
                 .collect(Collectors.toCollection(ArrayList::new));
     }
@@ -182,13 +189,16 @@ public class Day20 {
     public record ParticleCoordinatesEquations(Particle particle, List<QuadraticEquation> equations) {
     }
 
-    public record QuadraticEquationsIntersections(List<ParticlePositionEquation> equations, int t) {
-    }
-
     private static ParticleCoordinatesEquations mapToPositionEquations(Particle particle) {
-        BigDecimal halfOfAccelerationX = BigDecimal.valueOf(particle.acceleration.x).divide(BigDecimal.valueOf(2));
-        BigDecimal halfOfAccelerationY = BigDecimal.valueOf(particle.acceleration.y).divide(BigDecimal.valueOf(2));
-        BigDecimal halfOfAccelerationZ = BigDecimal.valueOf(particle.acceleration.z).divide(BigDecimal.valueOf(2));
+        BigDecimal halfOfAccelerationX = BigDecimal.valueOf(particle.acceleration.x)
+                .setScale(mc.getPrecision(), mc.getRoundingMode())
+                .divide(BigDecimal.valueOf(2), mc.getRoundingMode());
+        BigDecimal halfOfAccelerationY = BigDecimal.valueOf(particle.acceleration.y)
+                .setScale(mc.getPrecision(), mc.getRoundingMode())
+                .divide(BigDecimal.valueOf(2), mc.getRoundingMode());
+        BigDecimal halfOfAccelerationZ = BigDecimal.valueOf(particle.acceleration.z)
+                .setScale(mc.getPrecision(), mc.getRoundingMode())
+                .divide(BigDecimal.valueOf(2), mc.getRoundingMode());
         QuadraticEquation equation1 = new QuadraticEquation(
                 halfOfAccelerationX,
                 halfOfAccelerationX.add(BigDecimal.valueOf(particle.velocity.x)),
