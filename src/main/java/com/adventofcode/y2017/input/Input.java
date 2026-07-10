@@ -107,8 +107,12 @@ public class Input {
         return getInputFromFile("/y2017/day14").getFirst();
     }
 
-    public static List<String> day15() throws IOException {
-        return getInputFromFile("/y2017/day15");
+    public static int[] day15() throws IOException {
+        return getInputFromFile("/y2017/day15")
+                .stream()
+                .map(line -> line.replaceAll("Generator [AB] starts with ", ""))
+                .mapToInt(Integer::parseInt)
+                .toArray();
     }
 
     public static List<String> day16() throws IOException {
