@@ -1,6 +1,7 @@
 package com.adventofcode.y2017.input;
 
 import com.adventofcode.y2017.Day11;
+import com.adventofcode.y2017.Day20;
 import com.adventofcode.y2017.Day7;
 import com.adventofcode.y2017.Day8;
 
@@ -137,8 +138,11 @@ public class Input {
                 .toArray(char[][]::new);
     }
 
-    public static List<String> day20() throws IOException {
-        return getInputFromFile("/y2017/day20");
+    public static List<Day20.Particle> day20() throws IOException {
+        return getInputFromFile("/y2017/day20")
+                .stream()
+                .map(Day20.Particle::parse)
+                .toList();
     }
 
     public static List<String> day21() throws IOException {
