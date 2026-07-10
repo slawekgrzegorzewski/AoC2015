@@ -130,8 +130,11 @@ public class Input {
         return getInputFromFile("/y2017/day18");
     }
 
-    public static List<String> day19() throws IOException {
-        return getInputFromFile("/y2017/day19");
+    public static char[][] day19() throws IOException {
+        return getInputFromFile("/y2017/day19")
+                .stream()
+                .map(String::toCharArray)
+                .toArray(char[][]::new);
     }
 
     public static List<String> day20() throws IOException {

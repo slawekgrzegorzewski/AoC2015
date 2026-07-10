@@ -19,7 +19,7 @@ class Day19Test {
 
     @Test
     void testPart1() {
-        assertEquals(0L, day19.part1());
+        assertEquals("QPRYCIOLU", day19.part1());
     }
 
     @Test
