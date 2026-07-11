@@ -118,8 +118,8 @@ public class Input {
 
     public static List<String> day16() throws IOException {
         return Arrays.stream(getInputFromFile("/y2017/day16")
-                .getFirst()
-                .split(","))
+                        .getFirst()
+                        .split(","))
                 .toList();
     }
 
@@ -145,8 +145,14 @@ public class Input {
                 .toList();
     }
 
-    public static List<String> day21() throws IOException {
-        return getInputFromFile("/y2017/day21");
+    public static Map<String, char[][]> day21() throws IOException {
+        return getInputFromFile("/y2017/day21")
+                .stream()
+                .map(line -> line.split(" => "))
+                .collect(Collectors.toMap(
+                        line -> line[0],
+                        line -> Arrays.stream(line[1].split("/")).map(String::toCharArray).toArray(char[][]::new)
+                ));
     }
 
     public static List<String> day22() throws IOException {
