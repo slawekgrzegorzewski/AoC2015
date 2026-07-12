@@ -1,14 +1,9 @@
 package com.adventofcode.y2017.input;
 
-import com.adventofcode.y2017.Day11;
-import com.adventofcode.y2017.Day20;
-import com.adventofcode.y2017.Day7;
-import com.adventofcode.y2017.Day8;
+import com.adventofcode.y2017.*;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.adventofcode.Utils.getInputFromFile;
@@ -155,8 +150,19 @@ public class Input {
                 ));
     }
 
-    public static List<String> day22() throws IOException {
-        return getInputFromFile("/y2017/day22");
+    public static Day22.TaskInput day22() throws IOException {
+        char[][] array = getInputFromFile("/y2017/day22")
+                .stream()
+                .map(String::toCharArray)
+                .toArray(char[][]::new);
+        Map<Day22.Coordinates, Character> map = new HashMap<>();
+        for (int row = 0; row < array.length; row++) {
+            for (int column = 0; column < array[row].length; column++) {
+                if (array[row][column] == '#')
+                    map.put(new Day22.Coordinates(column, row), 'i');
+            }
+        }
+        return new Day22.TaskInput(map, array[0].length / 2, array.length / 2);
     }
 
     public static List<String> day23() throws IOException {
