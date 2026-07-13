@@ -172,8 +172,12 @@ public class Input {
         return getInputFromFile("/y2017/day23");
     }
 
-    public static List<String> day24() throws IOException {
-        return getInputFromFile("/y2017/day24");
+    public static List<Day24.Component> day24() throws IOException {
+        return getInputFromFile("/y2017/day24")
+                .stream()
+                .map(line -> line.split("/"))
+                .map(line -> new Day24.Component(Integer.parseInt(line[0]), Integer.parseInt(line[1])))
+                .toList();
     }
 
     public static List<String> day25() throws IOException {
