@@ -3,22 +3,33 @@ package com.adventofcode.y2018;
 import com.adventofcode.y2018.input.Input;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 public class Day1 {
-    private final List<String> input;
+    private final int[] differencies;
 
 
     public Day1() throws IOException {
-        this.input = Input.day1();
+        this.differencies = Input.day1();
     }
 
     long part1() {
-        return 0L;
+        return Arrays.stream(differencies).sum();
     }
 
     long part2() {
-        return 0L;
+        Set<Integer> seen = new HashSet<>();
+        int runningSum = 0;
+        for (int i = 0; i < differencies.length; i = (i + 1) % differencies.length) {
+            int difference = differencies[i];
+            runningSum += difference;
+            if (!seen.add(runningSum)) {
+                return runningSum;
+            }
+        }
+        throw new RuntimeException("No duplicate found");
     }
 }
 

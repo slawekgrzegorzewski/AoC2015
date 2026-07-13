@@ -7,103 +7,106 @@ import static com.adventofcode.Utils.getInputFromFile;
 
 public class Input {
 
-    public static List<String> day1() throws IOException {
-        return getInputFromFile("/shell/day1");
+    public static int[] day1() throws IOException {
+        return getInputFromFile("/y2018/day1")
+                .stream()
+                .mapToInt(Integer::parseInt)
+                .toArray();
     }
 
     public static List<String> day2() throws IOException {
-        return getInputFromFile("/shell/day2");
+        return getInputFromFile("/y2018/day2");
     }
 
     public static List<String> day3() throws IOException {
-        return getInputFromFile("/shell/day3");
+        return getInputFromFile("/y2018/day3");
     }
 
     public static List<String> day4() throws IOException {
-        return getInputFromFile("/shell/day4");
+        return getInputFromFile("/y2018/day4");
     }
 
     public static List<String> day5() throws IOException {
-        return getInputFromFile("/shell/day5");
+        return getInputFromFile("/y2018/day5");
     }
 
     public static List<String> day6() throws IOException {
-        return getInputFromFile("/shell/day6");
+        return getInputFromFile("/y2018/day6");
     }
 
     public static List<String> day7() throws IOException {
-        return getInputFromFile("/shell/day7");
+        return getInputFromFile("/y2018/day7");
     }
 
     public static List<String> day8() throws IOException {
-        return getInputFromFile("/shell/day8");
+        return getInputFromFile("/y2018/day8");
     }
 
     public static List<String> day9() throws IOException {
-        return getInputFromFile("/shell/day9");
+        return getInputFromFile("/y2018/day9");
     }
 
     public static List<String> day10() throws IOException {
-        return getInputFromFile("/shell/day10");
+        return getInputFromFile("/y2018/day10");
     }
 
     public static List<String> day11() throws IOException {
-        return getInputFromFile("/shell/day11");
+        return getInputFromFile("/y2018/day11");
     }
 
     public static List<String> day12() throws IOException {
-        return getInputFromFile("/shell/day12");
+        return getInputFromFile("/y2018/day12");
     }
 
     public static List<String> day13() throws IOException {
-        return getInputFromFile("/shell/day13");
+        return getInputFromFile("/y2018/day13");
     }
 
     public static List<String> day14() throws IOException {
-        return getInputFromFile("/shell/day14");
+        return getInputFromFile("/y2018/day14");
     }
 
     public static List<String> day15() throws IOException {
-        return getInputFromFile("/shell/day15");
+        return getInputFromFile("/y2018/day15");
     }
 
     public static List<String> day16() throws IOException {
-        return getInputFromFile("/shell/day16");
+        return getInputFromFile("/y2018/day16");
     }
 
     public static List<String> day17() throws IOException {
-        return getInputFromFile("/shell/day17");
+        return getInputFromFile("/y2018/day17");
     }
 
     public static List<String> day18() throws IOException {
-        return getInputFromFile("/shell/day18");
+        return getInputFromFile("/y2018/day18");
     }
 
     public static List<String> day19() throws IOException {
-        return getInputFromFile("/shell/day19");
+        return getInputFromFile("/y2018/day19");
     }
 
     public static List<String> day20() throws IOException {
-        return getInputFromFile("/shell/day20");
+        return getInputFromFile("/y2018/day20");
     }
 
     public static List<String> day21() throws IOException {
-        return getInputFromFile("/shell/day21");
+        return getInputFromFile("/y2018/day21");
     }
 
     public static List<String> day22() throws IOException {
-        return getInputFromFile("/shell/day22");
+        return getInputFromFile("/y2018/day22");
     }
 
     public static List<String> day23() throws IOException {
-        return getInputFromFile("/shell/day23");
+        return getInputFromFile("/y2018/day23");
     }
 
     public static List<String> day24() throws IOException {
-        return getInputFromFile("/shell/day24");
+        return getInputFromFile("/y2018/day24");
     }
 
     public static List<String> day25() throws IOException {
-        return getInputFromFile("/shell/day25");
+        return getInputFromFile("/y2018/day25");
     }
 }
