@@ -3,10 +3,7 @@ package com.adventofcode.y2017.input;
 import com.adventofcode.y2017.*;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.adventofcode.Utils.getInputFromFile;
@@ -180,7 +177,27 @@ public class Input {
                 .toList();
     }
 
-    public static List<String> day25() throws IOException {
-        return getInputFromFile("/y2017/day25");
+    public static Day25.TuringMachine day25() throws IOException {
+        List<String> inputFromFile = getInputFromFile("/y2017/day25");
+        String initialState = inputFromFile.get(0).replace("Begin in state ", "").replace(".", "");
+        int diagnosticsAfterSteps = Integer.parseInt(inputFromFile.get(1).replace("Perform a diagnostic checksum after ", "").replace(" steps.", ""));
+        Map<String, Day25.State> states = new HashMap<>();
+        for (int i = 3; i + 8 < inputFromFile.size(); i += 10) {
+            String stateName = inputFromFile.get(i).replace("In state ", "").replace(":", "");
+            int writeValueZero = Integer.parseInt(inputFromFile.get(i + 2).replace("    - Write the value ", "").replace(".", ""));
+            boolean moveRightZero = "    - Move one slot to the right.".equals(inputFromFile.get(i + 3));
+            String nextStateZero = inputFromFile.get(i + 4).replace("    - Continue with state ", "").replace(".", "");
+            int writeValueOne = Integer.parseInt(inputFromFile.get(i + 6).replace("    - Write the value ", "").replace(".", ""));
+            boolean moveRightOne = "    - Move one slot to the right.".equals(inputFromFile.get(i + 7));
+            String nextStateOne = inputFromFile.get(i + 8).replace("    - Continue with state ", "").replace(".", "");
+            Day25.State state = new Day25.State(stateName, Map.of(0, new Day25.Action(writeValueZero, moveRightZero, nextStateZero), 1, new Day25.Action(writeValueOne, moveRightOne, nextStateOne)));
+            states.put(stateName, state);
+        }
+        return new Day25.TuringMachine(
+                states.get(initialState),
+                states,
+                new LinkedList<>(),
+                diagnosticsAfterSteps
+        );
     }
 }
