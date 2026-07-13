@@ -6,9 +6,11 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 public class Day18 {
     private final List<String> program;
@@ -90,7 +92,7 @@ public class Day18 {
 
         @Override
         public void run() {
-            value = execute(programId, input, output);
+            value = execute(programId, program, input, output, null, null, new HashMap<>());
         }
 
         public int getValue() {
@@ -98,13 +100,14 @@ public class Day18 {
         }
     }
 
-    private int execute(long programId, BlockingQueue<Long> input, BlockingQueue<Long> output) {
+    public static int execute(long programId, List<String> program, BlockingQueue<Long> input, BlockingQueue<Long> output, Consumer<DebugInfo> debugBeforeCommand, Consumer<DebugInfo> debugAfterCommand, Map<String, Long> registers) {
         try {
             int send = 0;
-            Map<String, Long> registers = new HashMap<>();
             registers.put("p", programId);
             int pointer = 0;
             while (pointer < program.size() && pointer >= 0) {
+                DebugInfo beforDebugInfo = new DebugInfo(program, pointer, registers);
+                Optional.ofNullable(debugBeforeCommand).ifPresent(c -> c.accept(beforDebugInfo));
                 String instruction = program.get(pointer);
                 if (instruction.startsWith("set ")) {
                     String[] args = instruction.replace("set ", "").split(" ");
@@ -115,6 +118,9 @@ public class Day18 {
                 } else if (instruction.startsWith("add ")) {
                     String[] args = instruction.replace("add ", "").split(" ");
                     registers.compute(args[0], (_, v) -> (v == null ? 0 : v) + getValue(registers, args[1]));
+                }  else if (instruction.startsWith("sub ")) {
+                    String[] args = instruction.replace("sub ", "").split(" ");
+                    registers.compute(args[0], (_, v) -> (v == null ? 0 : v) - getValue(registers, args[1]));
                 } else if (instruction.startsWith("mod ")) {
                     String[] args = instruction.replace("mod ", "").split(" ");
                     registers.compute(args[0], (_, v) -> (v == null ? 0 : v) % getValue(registers, args[1]));
@@ -125,18 +131,27 @@ public class Day18 {
                 } else if (instruction.startsWith("rcv ")) {
                     String[] args = instruction.replace("rcv ", "").split(" ");
                     Long value = input.poll(10, TimeUnit.MILLISECONDS);
-                    if(value == null) return send;
+                    if (value == null) return send;
                     registers.put(args[0], value);
                 } else if (instruction.startsWith("jgz ")) {
                     String[] args = instruction.replace("jgz ", "").split(" ");
                     if (getValue(registers, args[0]) > 0)
                         pointer += (int) (getValue(registers, args[1]) - 1);
-                } else throw new RuntimeException();
+                }  else if (instruction.startsWith("jnz ")) {
+                    String[] args = instruction.replace("jnz ", "").split(" ");
+                    if (getValue(registers, args[0]) != 0)
+                        pointer += (int) (getValue(registers, args[1]) - 1);
+                } else throw new RuntimeException(instruction);
                 pointer++;
+                DebugInfo afterDebugInfo = new DebugInfo(program, pointer, registers);
+                Optional.ofNullable(debugAfterCommand).ifPresent(c -> c.accept(afterDebugInfo));
             }
             return send;
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public record DebugInfo(List<String> program, int currentPointer, Map<String, Long> registers) {
     }
 }
