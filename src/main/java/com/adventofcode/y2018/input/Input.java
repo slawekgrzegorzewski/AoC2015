@@ -2,6 +2,7 @@ package com.adventofcode.y2018.input;
 
 import com.adventofcode.y2018.Day3;
 import com.adventofcode.y2018.Day4;
+import com.adventofcode.y2018.Day5;
 
 import java.io.IOException;
 import java.util.List;
@@ -39,8 +40,19 @@ public class Input {
                 ));
     }
 
-    public static List<String> day5() throws IOException {
-        return getInputFromFile("/y2018/day5");
+    public static Day5.Particle day5(Character filterOut) throws IOException {
+        char[] particles = getInputFromFile("/y2018/day5").getFirst().toCharArray();
+        Day5.Particle firstParticle = new Day5.Particle(particles[0]);
+        Day5.Particle particle = firstParticle;
+        for (int i = 1; i < particles.length; i++) {
+            char p = particles[i];
+            if (filterOut != null && Character.toLowerCase(p) == Character.toLowerCase(filterOut))
+                continue;
+            particle.next = new Day5.Particle(p);
+            particle.next.previous = particle;
+            particle = particle.next;
+        }
+        return firstParticle;
     }
 
     public static List<String> day6() throws IOException {
