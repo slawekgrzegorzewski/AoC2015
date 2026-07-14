@@ -1,9 +1,12 @@
 package com.adventofcode.y2018.input;
 
 import com.adventofcode.y2018.Day3;
+import com.adventofcode.y2018.Day4;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.adventofcode.Utils.getInputFromFile;
 
@@ -27,8 +30,13 @@ public class Input {
                 .toList();
     }
 
-    public static List<String> day4() throws IOException {
-        return getInputFromFile("/y2018/day4");
+    public static Map<Day4.Timestamp, String> day4() throws IOException {
+        return getInputFromFile("/y2018/day4")
+                .stream()
+                .collect(Collectors.toMap(
+                        line -> Day4.Timestamp.parse(line.substring(0, line.indexOf(']') + 1)),
+                        line -> line.substring(line.indexOf(']') + 2)
+                ));
     }
 
     public static List<String> day5() throws IOException {
