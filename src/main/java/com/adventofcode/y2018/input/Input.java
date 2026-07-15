@@ -3,6 +3,7 @@ package com.adventofcode.y2018.input;
 import com.adventofcode.y2018.Day3;
 import com.adventofcode.y2018.Day4;
 import com.adventofcode.y2018.Day5;
+import com.adventofcode.y2018.Day6;
 
 import java.io.IOException;
 import java.util.List;
@@ -55,8 +56,11 @@ public class Input {
         return firstParticle;
     }
 
-    public static List<String> day6() throws IOException {
-        return getInputFromFile("/y2018/day6");
+    public static List<Day6.Coordinate> day6() throws IOException {
+        return getInputFromFile("/y2018/day6")
+                .stream()
+                .map(Day6.Coordinate::parse)
+                .toList();
     }
 
     public static List<String> day7() throws IOException {
