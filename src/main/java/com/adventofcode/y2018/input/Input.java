@@ -1,9 +1,6 @@
 package com.adventofcode.y2018.input;
 
-import com.adventofcode.y2018.Day3;
-import com.adventofcode.y2018.Day4;
-import com.adventofcode.y2018.Day5;
-import com.adventofcode.y2018.Day6;
+import com.adventofcode.y2018.*;
 
 import java.io.IOException;
 import java.util.*;
@@ -88,8 +85,8 @@ public class Input {
                 .toList();
     }
 
-    public static List<String> day9() throws IOException {
-        return getInputFromFile("/y2018/day9");
+    public static Day9.GameInfo day9() throws IOException {
+        return Day9.GameInfo.parse(getInputFromFile("/y2018/day9").getFirst());
     }
 
     public static List<String> day10() throws IOException {

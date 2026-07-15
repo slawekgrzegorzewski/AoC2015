@@ -15,11 +15,11 @@ public class Day8 {
     }
 
     long part1() {
-        return getNode(0).node.sumMetadata();
+        return getNode(0).node().sumMetadata();
     }
 
     long part2() {
-        return getNode(0).node.value();
+        return getNode(0).node().value();
     }
 
     private NodeInListInfo getNode(int nodeStartIndex) {
