@@ -6,10 +6,7 @@ import com.adventofcode.y2018.Day5;
 import com.adventofcode.y2018.Day6;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -83,8 +80,12 @@ public class Input {
         return stepsPrerequisites;
     }
 
-    public static List<String> day8() throws IOException {
-        return getInputFromFile("/y2018/day8");
+    public static List<Integer> day8() throws IOException {
+        return Arrays.stream(getInputFromFile("/y2018/day8")
+                        .getFirst()
+                        .split(" "))
+                .map(Integer::parseInt)
+                .toList();
     }
 
     public static List<String> day9() throws IOException {
