@@ -6,8 +6,11 @@ import com.adventofcode.y2018.Day5;
 import com.adventofcode.y2018.Day6;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.adventofcode.Utils.getInputFromFile;
@@ -63,8 +66,21 @@ public class Input {
                 .toList();
     }
 
-    public static List<String> day7() throws IOException {
-        return getInputFromFile("/y2018/day7");
+    public static Map<String, List<String>> day7() throws IOException {
+        Map<String, List<String>> stepsPrerequisites = new HashMap<>();
+        Pattern pattern = Pattern.compile("Step (\\w) must be finished before step (\\w) can begin.");
+        getInputFromFile("/y2018/day7")
+                .stream()
+                .map(pattern::matcher)
+                .map(matcher -> {
+                    if (!matcher.find()) throw new IllegalArgumentException("Invalid input");
+                    return new String[]{matcher.group(1), matcher.group(2)};
+                })
+                .forEach(strings -> {
+                    stepsPrerequisites.computeIfAbsent(strings[1], _ -> new ArrayList<>()).add(strings[0]);
+                    stepsPrerequisites.computeIfAbsent(strings[0], _ -> new ArrayList<>());
+                });
+        return stepsPrerequisites;
     }
 
     public static List<String> day8() throws IOException {
