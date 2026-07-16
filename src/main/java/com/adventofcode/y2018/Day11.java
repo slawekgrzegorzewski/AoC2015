@@ -1,6 +1,7 @@
 package com.adventofcode.y2018;
 
 import com.adventofcode.y2018.input.Input;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 
@@ -13,20 +14,11 @@ public class Day11 {
     }
 
     String part1() {
-        int[][] prefixes = initPrefixes(initMap());
-        return findMaxPowerSquareOfSize(prefixes, 3).toPart1String();
+        return findMaxPowerSquareOfSize(initPrefixes(initMap()), 3).toPart1String();
     }
 
     String part2() {
-        int[][] prefixes = initPrefixes(initMap());
-        SquareIdentifierWithPower maxPower = new SquareIdentifierWithPower(new SquareIdentifier(0, 0, 0), Integer.MIN_VALUE);
-        for (int size = 1; size <= 300; size++) {
-            SquareIdentifierWithPower squareIdentifierWithPower = findMaxPowerSquareOfSize(prefixes, size);
-            if (squareIdentifierWithPower.power() > maxPower.power()) {
-                maxPower = squareIdentifierWithPower;
-            }
-        }
-        return maxPower.toPart2String();
+        return findMaxPowerSquareOfSize(initPrefixes(initMap()), null).toPart2String();
     }
 
     private int[][] initMap() {
@@ -66,24 +58,29 @@ public class Day11 {
         return power;
     }
 
-    private static SquareIdentifierWithPower findMaxPowerSquareOfSize(int[][] prefixes, int size) {
+    private static SquareIdentifierWithPower findMaxPowerSquareOfSize(
+            int[][] prefixes,
+            @Nullable Integer forSizeOnly) {
         int maxPower = Integer.MIN_VALUE;
-        int maxX = 0, maxY = 0;
-        int upperBound = 300 - size;
-        for (int y = 0; y <= upperBound; y++) {
-            for (int x = 0; x <= upperBound; x++) {
-                int sum = prefixes[y + size - 1][x + size - 1]
-                        - (x == 0 ? 0 : prefixes[y + size - 1][x - 1])
-                        - (y == 0 ? 0 : prefixes[y - 1][x + size - 1])
-                        + ((x == 0 || y == 0) ? 0 : prefixes[y - 1][x - 1]);
-                if (sum > maxPower) {
-                    maxPower = sum;
-                    maxX = x + 1;
-                    maxY = y + 1;
+        int maxX = 0, maxY = 0, sizeOfMax = 0;
+        for (int size = forSizeOnly == null ? 1 : 3; size <= (forSizeOnly == null ? 300 : 3); size++) {
+            int upperBound = 300 - size;
+            for (int y = 0; y <= upperBound; y++) {
+                for (int x = 0; x <= upperBound; x++) {
+                    int sum = prefixes[y + size - 1][x + size - 1]
+                            - (x == 0 ? 0 : prefixes[y + size - 1][x - 1])
+                            - (y == 0 ? 0 : prefixes[y - 1][x + size - 1])
+                            + ((x == 0 || y == 0) ? 0 : prefixes[y - 1][x - 1]);
+                    if (sum > maxPower) {
+                        maxPower = sum;
+                        maxX = x + 1;
+                        maxY = y + 1;
+                        sizeOfMax = size;
+                    }
                 }
             }
         }
-        return new SquareIdentifierWithPower(new SquareIdentifier(maxX, maxY, size), maxPower);
+        return new SquareIdentifierWithPower(new SquareIdentifier(maxX, maxY, sizeOfMax), maxPower);
     }
 
     public record SquareIdentifier(int x, int y, int size) {
