@@ -1,6 +1,7 @@
 package com.adventofcode.y2018.input;
 
 import com.adventofcode.y2018.*;
+import com.google.common.base.Splitter;
 
 import java.io.IOException;
 import java.util.*;
@@ -89,8 +90,20 @@ public class Input {
         return Day9.GameInfo.parse(getInputFromFile("/y2018/day9").getFirst());
     }
 
-    public static List<String> day10() throws IOException {
-        return getInputFromFile("/y2018/day10");
+    public static Map<Day10.Position, Day10.Velocity> day10() throws IOException {
+        return getInputFromFile("/y2018/day10")
+                .stream()
+                .map(line -> line.replace("position=<", "").replace("velocity=<", "").replace(">", "").replace(",", ""))
+                .map(line -> Splitter.on(" ").trimResults().omitEmptyStrings().splitToList(line))
+                .collect(Collectors.toMap(
+                        split -> new Day10.Position(Integer.parseInt(split.getFirst()), Integer.parseInt(split.get(1))),
+                        split -> new Day10.Velocity(Integer.parseInt(split.get(2)), Integer.parseInt(split.getLast())),
+                        (v, v1) -> {
+                            if (v.equals(v1))
+                                return v;
+                            throw new IllegalArgumentException("Duplicate key");
+                        }
+                ));
     }
 
     public static List<String> day11() throws IOException {
