@@ -156,8 +156,8 @@ public class Input {
         return new Day13.TrackAndCarts(track, carts);
     }
 
-    public static List<String> day14() throws IOException {
-        return getInputFromFile("/y2018/day14");
+    public static String day14() throws IOException {
+        return getInputFromFile("/y2018/day14").getFirst();
     }
 
     public static List<String> day15() throws IOException {
