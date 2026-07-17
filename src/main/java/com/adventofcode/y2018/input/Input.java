@@ -131,8 +131,29 @@ public class Input {
                                 )));
     }
 
-    public static List<String> day13() throws IOException {
-        return getInputFromFile("/y2018/day13");
+    public static Day13.TrackAndCarts day13() throws IOException {
+        List<Day13.Cart> carts = new ArrayList<>();
+        Map<Day13.Coordinate, Character> track = new HashMap<>();
+        List<String> input = getInputFromFile("/y2018/day13");
+        int cartId = 0;
+        for (int y = 0; y < input.size(); y++) {
+            char[] row = input.get(y).toCharArray();
+            for (int x = 0; x < row.length; x++) {
+                final Day13.Coordinate coordinate = new Day13.Coordinate(x, y);
+                switch (row[x]) {
+                    case '<', '>' -> {
+                        track.put(coordinate, '-');
+                        carts.add(new Day13.Cart(cartId++, coordinate, row[x] == '<' ? Day13.Direction.LEFT : Day13.Direction.RIGHT, -1));
+                    }
+                    case 'v', '^' -> {
+                        track.put(coordinate, '|');
+                        carts.add(new Day13.Cart(cartId++, coordinate, row[x] == 'v' ? Day13.Direction.DOWN : Day13.Direction.UP, -1));
+                    }
+                    case '-', '|', '/', '\\', '+' -> track.put(coordinate, row[x]);
+                }
+            }
+        }
+        return new Day13.TrackAndCarts(track, carts);
     }
 
     public static List<String> day14() throws IOException {
