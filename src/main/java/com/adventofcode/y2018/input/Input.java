@@ -1,5 +1,6 @@
 package com.adventofcode.y2018.input;
 
+import com.adventofcode.Utils;
 import com.adventofcode.y2018.*;
 import com.google.common.base.Splitter;
 
@@ -8,6 +9,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static com.adventofcode.Utils.BooleanArrayCollector.convertToAnIndex;
 import static com.adventofcode.Utils.getInputFromFile;
 
 public class Input {
@@ -110,8 +112,23 @@ public class Input {
         return Integer.parseInt(getInputFromFile("/y2018/day11").getFirst());
     }
 
-    public static List<String> day12() throws IOException {
-        return getInputFromFile("/y2018/day12");
+    public static Day12.PlantsNotes day12() throws IOException {
+        List<String> input = getInputFromFile("/y2018/day12");
+        return new Day12.PlantsNotes(
+                input.getFirst().replace("initial state: ", ""),
+                input.stream()
+                        .skip(2)
+                        .map(line -> line.split(" => "))
+                        .collect(
+                                new Utils.BooleanArrayCollector<>(
+                                        () -> {
+                                            boolean[] rules = new boolean[32];
+                                            Arrays.fill(rules, false);
+                                            return rules;
+                                        },
+                                        parts -> convertToAnIndex(parts[0]),
+                                        parts -> parts[1].charAt(0) == '#'
+                                )));
     }
 
     public static List<String> day13() throws IOException {
