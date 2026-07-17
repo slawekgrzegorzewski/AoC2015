@@ -89,63 +89,39 @@ public class Day13 {
     }
 
     public enum Direction {
-        UP, DOWN, LEFT, RIGHT;
+        UP, LEFT, DOWN, RIGHT;
+
+        Direction left() {
+            return values()[(ordinal() + 1) & 3];
+        }
+
+        Direction right() {
+            return values()[(ordinal() + 3) & 3];
+        }
+
+        boolean isHorizontal() {
+            return this == LEFT || this == RIGHT;
+        }
+
+        private Direction turn(int turnOrder) {
+            return switch (turnOrder) {
+                case 0 -> this.left();
+                case 1 -> this;
+                case 2 -> this.right();
+                default -> throw new IllegalStateException("Unexpected value: " + turnOrder);
+            };
+        }
 
         public Direction nextDirection(char trackElement, int turnsCount) {
             final int turnOrder = (turnsCount + 1) % 3;
-            return switch (this) {
-                case UP -> switch (trackElement) {
-                    case '/' -> Direction.RIGHT;
-                    case '\\' -> Direction.LEFT;
-                    case '|' -> this;
-                    case '+' -> switch (turnOrder) {
-                        case 0 -> Direction.LEFT;
-                        case 1 -> this;
-                        case 2 -> Direction.RIGHT;
-                        default -> throw new IllegalStateException("Unexpected value: " + turnOrder);
-                    };
-                    default -> throw new IllegalStateException("Unexpected value: " + trackElement);
-                };
-                case DOWN -> switch (trackElement) {
-                    case '/' -> Direction.LEFT;
-                    case '\\' -> Direction.RIGHT;
-                    case '|' -> this;
-                    case '+' -> switch (turnOrder) {
-                        case 0 -> Direction.RIGHT;
-                        case 1 -> this;
-                        case 2 -> Direction.LEFT;
-                        default -> throw new IllegalStateException("Unexpected value: " + turnOrder);
-                    };
-                    default -> throw new IllegalStateException("Unexpected value: " + trackElement);
-                };
-                case LEFT -> switch (trackElement) {
-                    case '/' -> Direction.DOWN;
-                    case '\\' -> Direction.UP;
-                    case '-' -> this;
-                    case '+' -> switch (turnOrder) {
-                        case 0 -> Direction.DOWN;
-                        case 1 -> this;
-                        case 2 -> Direction.UP;
-                        default -> throw new IllegalStateException("Unexpected value: " + turnOrder);
-                    };
-                    default -> throw new IllegalStateException("Unexpected value: " + trackElement);
-                };
-
-                case RIGHT -> switch (trackElement) {
-                    case '/' -> Direction.UP;
-                    case '\\' -> Direction.DOWN;
-                    case '-' -> this;
-                    case '+' -> switch (turnOrder) {
-                        case 0 -> Direction.UP;
-                        case 1 -> this;
-                        case 2 -> Direction.DOWN;
-                        default -> throw new IllegalStateException("Unexpected value: " + turnOrder);
-                    };
-                    default -> throw new IllegalStateException("Unexpected value: " + trackElement);
-                };
-
+            return switch (trackElement) {
+                case '/' -> isHorizontal() ? left() : right();
+                case '\\' -> isHorizontal() ? right() : left();
+                case '|', '-' -> this;
+                case '+' -> turn(turnOrder);
+                default -> throw new IllegalStateException("Unexpected value: " + trackElement);
             };
         }
-    }
 
+    }
 }
