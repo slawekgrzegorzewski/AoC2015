@@ -1,17 +1,16 @@
 package com.adventofcode.y2018;
 
+import com.adventofcode.Utils;
 import com.adventofcode.y2018.input.Input;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.OptionalInt;
+import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 public class Day14 {
+    public static final int NOT_FOUND = -1;
     private final int requiredLearningLengthAsInt;
-    private final List<Integer> requiredLearningLengthAsSequence;
+    private final Utils.ByteArrayWithSize requiredLearningLengthAsSequence;
 
     public Day14() throws IOException {
         this(Input.day14());
@@ -19,60 +18,73 @@ public class Day14 {
 
     public Day14(String requiredLearningLength) {
         this.requiredLearningLengthAsInt = Integer.parseInt(requiredLearningLength);
-        this.requiredLearningLengthAsSequence = new ArrayList<>();
-        for (char c : requiredLearningLength.toCharArray()) {
-            requiredLearningLengthAsSequence.add(c - '0');
+        char[] requiredLearningLengthCharArray = requiredLearningLength.toCharArray();
+        this.requiredLearningLengthAsSequence = new Utils.ByteArrayWithSize(requiredLearningLengthCharArray.length);
+        for (char c : requiredLearningLengthCharArray) {
+            requiredLearningLengthAsSequence.add((byte) (c - '0'));
         }
     }
 
     String part1() {
-        return continueMakingRecipes(scores1 -> scores1.size() < requiredLearningLengthAsInt + 10)
-                .subList(requiredLearningLengthAsInt, requiredLearningLengthAsInt + 10)
-                .stream()
-                .map(String::valueOf)
-                .collect(Collectors.joining());
+        return continueMakingRecipes(
+                scores -> scores.size() < requiredLearningLengthAsInt + 10,
+                scores -> getStringBetweenIndexes(scores, requiredLearningLengthAsInt, requiredLearningLengthAsInt + 10),
+                requiredLearningLengthAsInt + 10);
     }
 
     String part2() {
-        return String.valueOf(
-                solution(
-                        continueMakingRecipes(scores1 -> solution(scores1, requiredLearningLengthAsSequence).isEmpty()),
-                        requiredLearningLengthAsSequence)
-                        .orElseThrow());
+        return continueMakingRecipes(
+                scores -> firstIndexOf(scores, requiredLearningLengthAsSequence) == NOT_FOUND,
+                scores -> String.valueOf(firstIndexOf(scores, requiredLearningLengthAsSequence)),
+                21_000_000);
     }
 
-    private List<Integer> continueMakingRecipes(Predicate<List<Integer>> continuePredicate) {
-        List<Integer> scores = new ArrayList<>(requiredLearningLengthAsInt + 10);
-        scores.add(3);
-        scores.add(7);
+    private String continueMakingRecipes(
+            Predicate<Utils.ByteArrayWithSize> continuePredicate,
+            Function<Utils.ByteArrayWithSize, String> resultConverter,
+            int initialCapacity) {
+        Utils.ByteArrayWithSize scores = new Utils.ByteArrayWithSize(initialCapacity);
+        scores.add((byte) 3);
+        scores.add((byte) 7);
         int elf1Position = 0;
         int elf2Position = 1;
         while (continuePredicate.test(scores)) {
-            int scoreOfElf1Recipe = scores.get(elf1Position);
-            int scoreOfElf2Recipe = scores.get(elf2Position);
-            int newScore = scoreOfElf1Recipe + scoreOfElf2Recipe;
+            byte scoreOfElf1Recipe = scores.get(elf1Position);
+            byte scoreOfElf2Recipe = scores.get(elf2Position);
+            byte newScore = (byte) (scoreOfElf1Recipe + scoreOfElf2Recipe);
             if (newScore > 9) {
-                scores.add(1);
-                scores.add(newScore - 10);
-            } else {
-                scores.add(newScore);
+                scores.add((byte) 1);
+                newScore -= 10;
             }
+            scores.add(newScore);
             elf1Position = (elf1Position + scoreOfElf1Recipe + 1) % scores.size();
             elf2Position = (elf2Position + scoreOfElf2Recipe + 1) % scores.size();
         }
-        return scores;
+        return resultConverter.apply(scores);
     }
 
-    private OptionalInt solution(List<Integer> test, List<Integer> sequenceToFind) {
-        if (test.size() < requiredLearningLengthAsSequence.size() + 1) return OptionalInt.empty();
-        return containsSequenceNElementsFromEnd(test, sequenceToFind, 0)
-                ? OptionalInt.of(test.size() - sequenceToFind.size())
-                : (containsSequenceNElementsFromEnd(test, sequenceToFind, 1)
-                ? OptionalInt.of(test.size() - sequenceToFind.size() - 1)
-                : OptionalInt.empty());
+    private int firstIndexOf(Utils.ByteArrayWithSize test, Utils.ByteArrayWithSize sequenceToFind) {
+        if (test.size() < requiredLearningLengthAsSequence.size() + 1) return NOT_FOUND;
+        int size = firstIndexOf(test, sequenceToFind, 0);
+        return size > NOT_FOUND
+                ? size
+                : firstIndexOf(test, sequenceToFind, 1);
     }
 
-    private boolean containsSequenceNElementsFromEnd(List<Integer> test, List<Integer> sequenceToFind, int offset) {
-        return test.subList(test.size() - sequenceToFind.size() - offset, test.size() - offset).equals(sequenceToFind);
+    private int firstIndexOf(Utils.ByteArrayWithSize test, Utils.ByteArrayWithSize sequenceToFind, int offset) {
+        int start = test.size() - sequenceToFind.size() - offset;
+        for (int i = 0; i < sequenceToFind.size(); i++) {
+            if (test.get(start + i) != sequenceToFind.get(i))
+                return NOT_FOUND;
+        }
+        return start;
+    }
+
+    private String getStringBetweenIndexes(Utils.ByteArrayWithSize scores, int from, int to) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = from; i < to; i++) {
+            sb.append(scores.get(i));
+        }
+        return sb.toString();
     }
 }

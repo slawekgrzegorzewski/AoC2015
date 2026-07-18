@@ -70,4 +70,31 @@ public class Utils {
     public interface ToBooleanFunction<T> {
         boolean applyAsBool(T value);
     }
+
+    public static class ByteArrayWithSize {
+        byte[] array;
+        int size;
+
+        public ByteArrayWithSize(int initialCapacity) {
+            this.array = new byte[initialCapacity];
+            this.size = 0;
+        }
+
+        public void add(byte value) {
+            if (size == array.length) {
+                byte[] newArray = new byte[array.length * 2];
+                System.arraycopy(array, 0, newArray, 0, array.length);
+                array = newArray;
+            }
+            array[size++] = value;
+        }
+
+        public byte get(int index) {
+            return array[index];
+        }
+
+        public int size() {
+            return size;
+        }
+    }
 }
