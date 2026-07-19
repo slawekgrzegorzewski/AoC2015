@@ -171,10 +171,10 @@ public class Input {
                 switch (row[columnId]) {
                     case 'E' -> unitsDeployment.put(
                             new Day15.Coordinate(columnId, rowId),
-                            new Day15.Unit(Day15.UnitKind.ELF));
+                            new Day15.Unit(Day15.UnitKind.ELF, 3, 200));
                     case 'G' -> unitsDeployment.put(
                             new Day15.Coordinate(columnId, rowId),
-                            new Day15.Unit(Day15.UnitKind.GOBLIN));
+                            new Day15.Unit(Day15.UnitKind.GOBLIN, 3, 200));
                 }
             }
         }
