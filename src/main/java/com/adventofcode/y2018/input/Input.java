@@ -160,8 +160,25 @@ public class Input {
         return getInputFromFile("/y2018/day14").getFirst();
     }
 
-    public static List<String> day15() throws IOException {
-        return getInputFromFile("/y2018/day15");
+    public static Day15.Battle day15() throws IOException {
+        List<String> lines = getInputFromFile("/y2018/day15");
+        char[][] map = new char[lines.size()][lines.getFirst().length()];
+        Map<Day15.Coordinate, Day15.Unit> unitsDeployment = new HashMap<>();
+        for (int rowId = 0; rowId < lines.size(); rowId++) {
+            char[] row = lines.get(rowId).toCharArray();
+            for (int columnId = 0; columnId < row.length; columnId++) {
+                map[rowId][columnId] = row[columnId];
+                switch (row[columnId]) {
+                    case 'E' -> unitsDeployment.put(
+                            new Day15.Coordinate(columnId, rowId),
+                            new Day15.Unit(Day15.UnitKind.ELF));
+                    case 'G' -> unitsDeployment.put(
+                            new Day15.Coordinate(columnId, rowId),
+                            new Day15.Unit(Day15.UnitKind.GOBLIN));
+                }
+            }
+        }
+        return new Day15.Battle(map, unitsDeployment);
     }
 
     public static List<String> day16() throws IOException {
