@@ -1,11 +1,11 @@
 package com.adventofcode.y2018;
 
 import com.adventofcode.y2018.input.Input;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -23,125 +23,115 @@ public class Day15 {
     }
 
     long part1() {
-//        print(battle);
-//        System.out.println();
         int totalMoves = 0;
         int totalDamage = 0;
         int roundsCompleted = 0;
         while (true) {
-            List<Map.Entry<Coordinate, Unit>> unitsInMoveOrder = battle.unitsDeployment()
-                    .entrySet()
-                    .stream()
-                    .sorted(Map.Entry.comparingByKey(BY_Y_THEN_X))
-                    .collect(Collectors.toCollection(ArrayList::new));
-            int roundMoves = 0;
-            int roundDamage = 0;
-            while (!unitsInMoveOrder.isEmpty()) {
-                Map.Entry<Coordinate, Unit> unit = unitsInMoveOrder.removeFirst();
-                int[][] distances = distances(unit);
-                Map.Entry<Coordinate, Unit> target = getTargets(unit)
-                        .stream()
-                        .filter(targetDeployment -> isInRange(unit.getKey(), targetDeployment) || isAccessible(targetDeployment, battle.map()))
-                        .min(Comparator.<Map.Entry<Coordinate, Unit>, Integer>comparing(c -> getValue(distances, c.getKey()))
-                                .thenComparing(Map.Entry::getKey, BY_Y_THEN_X))
-                        .orElse(null);
-                if (target == null) {
-                    continue;
-                }
-                List<List<Coordinate>> paths = getShortestPaths(distances, unit, target);
-//            print(distances, List.of());
-//            System.out.println();
-//            print(distances, paths);
-                Coordinate nextPosition = paths
-                        .stream()
-                        .filter(Predicate.not(List::isEmpty))
-                        .map(List::removeLast)
-                        .min(BY_Y_THEN_X)
-                        .orElse(null);
-                if (nextPosition != null) {
-                    roundMoves++;
-                    battle.setCoordinate(nextPosition, unit.getValue().unitKind().type());
-                    battle.setCoordinate(unit.getKey(), '.');
-                    battle.unitsDeployment().remove(unit.getKey());
-                    battle.unitsDeployment().put(nextPosition, unit.getValue());
-                }
-//            print(battle.map());
-//            System.out.println();
+            RoundResult roundResult = round(battle);
+            totalMoves += roundResult.roundMoves();
+            totalDamage += roundResult.roundDamage();
+            if (!roundResult.roundCompleted()) {
+                return (long) roundsCompleted * battle.sumHpOfRemainingUnits();
+            }
+            roundsCompleted++;
+            if (roundResult.roundDamage() + roundResult.roundMoves() == 0)
+                break;
+        }
+        return (long) roundsCompleted * battle.sumHpOfRemainingUnits();
+    }
 
+    private RoundResult round(Battle battle) {
+        int roundMoves = 0;
+        int roundDamage = 0;
+        List<Map.Entry<Coordinate, Unit>> unitsInMoveOrder = battle.unitsDeployment()
+                .entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByKey(BY_Y_THEN_X))
+                .collect(Collectors.toCollection(ArrayList::new));
+        while (!unitsInMoveOrder.isEmpty()) {
+            Map.Entry<Coordinate, Unit> unit = unitsInMoveOrder.removeFirst();
+            Coordinate unitFinalPosition = unit.getKey();
+            Map.Entry<Coordinate, Unit> target = getTargets(unit)
+                    .stream()
+                    .filter(targetDeployment -> isInRange(unit.getKey(), targetDeployment))
+                    .min(Map.Entry.<Coordinate, Unit>comparingByValue(Comparator.comparing(Unit::hp))
+                            .thenComparing(Map.Entry.comparingByKey(BY_Y_THEN_X)))
+                    .orElse(null);
+            if (target == null) {
+                int[][] distances = distances(unit);
+
+                Coordinate targetLocation = getTargets(unit)
+                        .stream()
+                        .filter(targetDeployment -> isAccessible(targetDeployment.getKey(), battle.map()))
+                        .flatMap(targetDeployment -> Stream.of(targetDeployment.getKey().up(), targetDeployment.getKey().down(), targetDeployment.getKey().left(), targetDeployment.getKey().right()))
+                        .filter(c -> battle.getCoordinate(c) == '.')
+                        .min(Comparator.<Coordinate, Integer>comparing(c -> c.getValue(distances))
+                                .thenComparing(BY_Y_THEN_X))
+                        .orElse(null);
+                if (targetLocation != null) {
+                    Coordinate nextPosition = Stream.of(unitFinalPosition.up(), unitFinalPosition.down(), unitFinalPosition.left(), unitFinalPosition.right())
+                            .filter(c -> c.inBounds(battle.map()))
+                            .filter(c -> battle.getCoordinate(c) == '.')
+                            .filter(c -> c.getValue(distances) == 1)
+                            .filter(c -> {
+                                ArrayList<Coordinate> path = new ArrayList<>();
+                                path.add(c);
+                                return canAccessTarget(distances, c, targetLocation, path);
+                            })
+                            .min(BY_Y_THEN_X)
+                            .orElse(null);
+                    if (nextPosition != null) {
+                        roundMoves++;
+                        battle.setCoordinate(nextPosition, unit.getValue().unitKind().type());
+                        battle.setCoordinate(unit.getKey(), '.');
+                        battle.unitsDeployment().remove(unit.getKey());
+                        battle.unitsDeployment().put(nextPosition, unit.getValue());
+                        unitFinalPosition = nextPosition;
+                    }
+                }
+                Coordinate unitFinalPositionCopy = unitFinalPosition;
                 target = getTargets(unit)
                         .stream()
-                        .filter(targetDeployment -> isInRange(nextPosition == null ? unit.getKey() : nextPosition, targetDeployment))
+                        .filter(targetDeployment -> isInRange(unitFinalPositionCopy, targetDeployment))
                         .min(Comparator.<Map.Entry<Coordinate, Unit>, Integer>comparing(c -> c.getValue().hp())
                                 .thenComparing(Map.Entry::getKey, BY_Y_THEN_X))
                         .orElse(null);
-                if (target != null) {
-                    roundDamage += target.getValue().damage(unit.getValue().attack());
-                    if (target.getValue().hp() <= 0) {
-                        battle.unitsDeployment().remove(target.getKey());
-                        battle.setCoordinate(target.getKey(), '.');
-                        unitsInMoveOrder.remove(target);
-                    }
-                }
-                if (getTargets(unit).isEmpty() && !unitsInMoveOrder.isEmpty()) {
-                    int sumOfHP = battle.unitsDeployment().values().stream().mapToInt(Unit::hp).sum();
-                    System.out.println("sumOfHP2 = " + sumOfHP);
-                    System.out.println("roundsCompleted = " + roundsCompleted);
-                    return (long) roundsCompleted * sumOfHP;
+            }
+            if (target != null) {
+                roundDamage += target.getValue().damage(unit.getValue().attack());
+                if (target.getValue().hp() <= 0) {
+                    battle.unitsDeployment().remove(target.getKey());
+                    battle.setCoordinate(target.getKey(), '.');
+                    unitsInMoveOrder.remove(target);
                 }
             }
-            totalMoves += roundMoves;
-            totalDamage += roundDamage;
-//            print(battle);
-//            System.out.println();
-            if (roundDamage + roundMoves == 0)
-                break;
-            roundsCompleted++;
-//            System.out.println("After " + roundsCompleted + " round" + (roundsCompleted == 1 ? "" : "s") + ":");
-//            System.out.println("total players = " + battle.unitsDeployment().size());
-//            System.out.println("total elves = " + battle.unitsDeployment().values().stream().filter(u -> u.unitKind() == ELF).count());
-//            System.out.println("total goblins = " + battle.unitsDeployment().values().stream().filter(u -> u.unitKind() == GOBLIN).count());
-//            System.out.println();
-//            print(battle);
-//            System.out.println();
+            if (getTargets(unit).isEmpty() && !unitsInMoveOrder.isEmpty()) {
+                return new RoundResult(roundMoves, roundDamage, false, battle.sumHpOfRemainingUnits(), battle.goblins(), battle.elves());
+            }
         }
-        int sumOfHP = battle.unitsDeployment().values().stream().mapToInt(Unit::hp).sum();
-        System.out.println("totalDamage = " + totalDamage);
-        System.out.println("totalMoves = " + totalMoves);
-        System.out.println("roundsCompleted = " + roundsCompleted);
-        System.out.println("sumOfHP = " + sumOfHP);
-        return (long) roundsCompleted * sumOfHP;
-        //343245
-        //345531 too low
-        //345580 too low
-        //347915 too high
+        return new RoundResult(roundMoves, roundDamage, true, battle.sumHpOfRemainingUnits(), battle.goblins(), battle.elves());
     }
 
-    private List<List<Coordinate>> getShortestPaths(int[][] distances, Map.Entry<Coordinate, Unit> unit, Map.Entry<Coordinate, Unit> target) {
-        List<List<Coordinate>> paths = new ArrayList<>();
-        List<Coordinate> currentPath = new ArrayList<>();
-        backtrackShortestPaths(distances, unit.getKey(), target.getKey(), target.getKey(), currentPath, paths);
-        paths.forEach(path -> {
-            path.remove(unit.getKey());
-            path.remove(target.getKey());
-        });
-        return paths;
+    private boolean canAccessTarget(int[][] distances, Coordinate source, Coordinate target, List<Coordinate> path) {
+        if (source.equals(target)) {
+            return true;
+        }
+        for (Coordinate c : List.of(source.up(), source.down(), source.left(), source.right())) {
+            if (!c.inBounds(battle.map)) continue;
+            if (battle.getCoordinate(c) != '.' && !c.equals(target)) continue;
+            if (c.getValue(distances) != source.getValue(distances) + 1) continue;
+            if (c.getValue(distances) > target.getValue(distances)) continue;
+            path.add(c);
+            if (canAccessTarget(distances, c, target, path)) {
+                return true;
+            }
+            path.remove(c);
+        }
+        return false;
     }
 
-    private void backtrackShortestPaths(int[][] distances, Coordinate source, Coordinate target, Coordinate current, List<Coordinate> path, List<List<Coordinate>> paths) {
-        path.add(current);
-        if (current.equals(source)) {
-            paths.add(path);
-            return;
-        }
-        if (!current.equals(target) && !current.equals(source) && battle.getCoordinate(current) != '.') return;
-        List<Coordinate> previousSteps = Stream.of(current.up(), current.right(), current.down(), current.left())
-                .filter(c -> c.inBounds(battle.map()))
-                .filter(c -> getValue(distances, c) == getValue(distances, current) - 1)
-                .toList();
-        Function<List<Coordinate>, List<Coordinate>> listProvider = currentPath -> previousSteps.size() == 1
-                ? currentPath
-                : new ArrayList<>(currentPath);
-        previousSteps.forEach(c -> backtrackShortestPaths(distances, source, target, c, listProvider.apply(path), paths));
+    private record RoundResult(int roundMoves, int roundDamage, boolean roundCompleted, int hpOfRemainingUnits,
+                               int goblins, int elves) {
     }
 
     private int[][] distances(Map.Entry<Coordinate, Unit> unit) {
@@ -149,27 +139,27 @@ public class Day15 {
         for (int[] distance : distances) {
             Arrays.fill(distance, Integer.MAX_VALUE);
         }
-        setValue(distances, unit.getKey(), 0);
+        unit.getKey().setValue(distances, 0);
         List<Coordinate> priorityQueue = new ArrayList<>();
         for (int y = 0; y < distances.length; y++) {
             for (int x = 0; x < distances[0].length; x++) {
                 priorityQueue.add(new Coordinate(x, y));
             }
         }
-        priorityQueue.sort(Comparator.comparing(c -> getValue(distances, c)));
+        priorityQueue.sort(Comparator.comparing(c -> c.getValue(distances)));
         while (!priorityQueue.isEmpty()) {
             Coordinate coordinate = priorityQueue.removeFirst();
-            if (getValue(distances, coordinate) < Integer.MAX_VALUE && (battle.getCoordinate(coordinate) == '.' || coordinate.equals(unit.getKey()))) {
+            if (coordinate.getValue(distances) < Integer.MAX_VALUE && (battle.getCoordinate(coordinate) == '.' || coordinate.equals(unit.getKey()))) {
                 Stream.of(coordinate.up(), coordinate.down(), coordinate.left(), coordinate.right())
                         .filter(c -> c.inBounds(battle.map()))
                         .filter(c -> battle.getCoordinate(c) != '#')
                         .forEach(c -> {
-                            if (getValue(distances, c) > getValue(distances, coordinate) + 1) {
-                                setValue(distances, c, getValue(distances, coordinate) + 1);
+                            if (c.getValue(distances) > coordinate.getValue(distances) + 1) {
+                                c.setValue(distances, coordinate.getValue(distances) + 1);
                             }
                         });
             }
-            priorityQueue.sort(Comparator.comparing(c -> getValue(distances, c)));
+            priorityQueue.sort(Comparator.comparing(c -> c.getValue(distances)));
         }
         return distances;
     }
@@ -178,6 +168,7 @@ public class Day15 {
         char[][] map = battle.map();
         for (int y = 0; y < map.length; y++) {
             char[] row = map[y];
+            System.out.print((y > 9 ? y / 10 + "" : "0") + (y % 10) + "  ");
             StringBuilder additionalLineReport = new StringBuilder();
             for (int x = 0; x < row.length; x++) {
                 char c = row[x];
@@ -185,7 +176,7 @@ public class Day15 {
                 if (c == 'G' || c == 'E')
                     additionalLineReport.append((additionalLineReport.isEmpty()) ? "" : ", ").append(String.format("%s(%d)", c, battle.unitsDeployment().get(new Coordinate(x, y)).hp()));
             }
-            System.out.println(additionalLineReport.isEmpty() ? "   " : ("   " + additionalLineReport + ""));
+            System.out.println(additionalLineReport.isEmpty() ? "   " : ("   " + additionalLineReport));
         }
     }
 
@@ -208,20 +199,11 @@ public class Day15 {
         }
     }
 
-    int getValue(int[][] map, Coordinate coordinate) {
-        return map[coordinate.y][coordinate.x];
-    }
-
-    void setValue(int[][] map, Coordinate coordinate, int value) {
-        map[coordinate.y][coordinate.x] = value;
-    }
-
     private boolean isInRange(Coordinate location, Map.Entry<Coordinate, Unit> target) {
         return location.manhattanDistance(target.getKey()) == 1;
     }
 
-    private boolean isAccessible(Map.Entry<Coordinate, Unit> target, char[][] map) {
-        Coordinate targetLocation = target.getKey();
+    private boolean isAccessible(Coordinate targetLocation, char[][] map) {
         return Stream.of(targetLocation.left(), targetLocation.right(), targetLocation.up(), targetLocation.down())
                 .filter(c -> c.inBounds(map))
                 .anyMatch(c -> map[c.y()][c.x()] == '.');
@@ -268,6 +250,18 @@ public class Day15 {
             }
             return new Day15.Battle(map, unitsDeployment);
         }
+
+        public int sumHpOfRemainingUnits() {
+            return unitsDeployment.values().stream().mapToInt(Unit::hp).sum();
+        }
+
+        public int goblins() {
+            return (int) unitsDeployment().values().stream().filter(u -> u.unitKind() == UnitKind.GOBLIN).count();
+        }
+
+        public int elves() {
+            return (int) unitsDeployment().values().stream().filter(u -> u.unitKind() == UnitKind.ELF).count();
+        }
     }
 
     public record Coordinate(int x, int y) {
@@ -293,6 +287,19 @@ public class Day15 {
 
         public boolean inBounds(char[][] map) {
             return y >= 0 && y < map.length && x >= 0 && x < map[0].length;
+        }
+
+        int getValue(int[][] map) {
+            return map[y][x];
+        }
+
+        void setValue(int[][] map, int value) {
+            map[y][x] = value;
+        }
+
+        @Override
+        public @NonNull String toString() {
+            return "(" + y + ", " + x + ')';
         }
     }
 
