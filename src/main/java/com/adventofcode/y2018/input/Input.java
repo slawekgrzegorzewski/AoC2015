@@ -165,8 +165,37 @@ public class Input {
         return Day15.Battle.parse(lines);
     }
 
-    public static List<String> day16() throws IOException {
-        return getInputFromFile("/y2018/day16");
+    public static Day16.ManualData day16() throws IOException {
+        List<String> lines = getInputFromFile("/y2018/day16");
+        int i = 0;
+        List<Day16.CommandSample> commandSamples = new ArrayList<>();
+        while (lines.get(i).startsWith("Before: ")) {
+            int[] beforeRegisters = Arrays.stream(lines.get(i).replace("Before: [", "")
+                            .replace("]", "")
+                            .split(", "))
+                    .mapToInt(Integer::parseInt)
+                    .toArray();
+            int[] afterRegisters = Arrays.stream(lines.get(i + 2).replace("After:  [", "")
+                            .replace("]", "")
+                            .split(", "))
+                    .mapToInt(Integer::parseInt)
+                    .toArray();
+            int[] command = Arrays.stream(lines.get(i + 1).split(" "))
+                    .mapToInt(Integer::parseInt)
+                    .toArray();
+            Day16.CommandSample commandSample = new Day16.CommandSample(beforeRegisters, afterRegisters, new Day16.Command(command[0], command[1], command[2], command[3]));
+            commandSamples.add(commandSample);
+            i += 4;
+        }
+        List<Day16.Command> program = new ArrayList<>();
+        for (i += 2; i < lines.size(); i++) {
+            int[] commandParts = Arrays.stream(lines.get(i).split(" "))
+                    .mapToInt(Integer::parseInt)
+                    .toArray();
+            Day16.Command command = new Day16.Command(commandParts[0], commandParts[1], commandParts[2], commandParts[3]);
+            program.add(command);
+        }
+        return new Day16.ManualData(commandSamples, program);
     }
 
     public static List<String> day17() throws IOException {
