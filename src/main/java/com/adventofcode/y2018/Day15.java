@@ -14,8 +14,12 @@ public class Day15 {
             .thenComparing(Coordinate::x);
     private final Battle battle;
 
+    public Day15(Battle battle) {
+        this.battle = battle;
+    }
+
     public Day15() throws IOException {
-        this.battle = Input.day15();
+        this(Input.day15());
     }
 
     long part1() {
@@ -243,6 +247,26 @@ public class Day15 {
 
         public char setCoordinate(Coordinate coordinate, char value) {
             return this.map()[coordinate.y][coordinate.x] = value;
+        }
+
+        public static Battle parse(List<String> lines) {
+            char[][] map = new char[lines.size()][lines.getFirst().length()];
+            Map<Day15.Coordinate, Day15.Unit> unitsDeployment = new HashMap<>();
+            for (int rowId = 0; rowId < lines.size(); rowId++) {
+                char[] row = lines.get(rowId).toCharArray();
+                for (int columnId = 0; columnId < row.length; columnId++) {
+                    map[rowId][columnId] = row[columnId];
+                    switch (row[columnId]) {
+                        case 'E' -> unitsDeployment.put(
+                                new Day15.Coordinate(columnId, rowId),
+                                new Day15.Unit(Day15.UnitKind.ELF, 3, 200));
+                        case 'G' -> unitsDeployment.put(
+                                new Day15.Coordinate(columnId, rowId),
+                                new Day15.Unit(Day15.UnitKind.GOBLIN, 3, 200));
+                    }
+                }
+            }
+            return new Day15.Battle(map, unitsDeployment);
         }
     }
 
