@@ -5,7 +5,6 @@ import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -23,22 +22,131 @@ public class Day15 {
     }
 
     long part1() {
-        int totalMoves = 0;
-        int totalDamage = 0;
+        Battle battle = copy(this.battle, null);
+        int roundsCompleted = battle(battle).completedRounds();
+        return (long) roundsCompleted * battle.sumHpOfRemainingUnits();
+    }
+
+    private Battle copy(Battle battle, Map<Coordinate, Unit> newDeployments) {
+        char[][] map = new char[battle.map.length][battle.map()[0].length];
+        for (int i = 0; i < battle.map().length; i++) {
+            char[] chars = battle.map()[i];
+            System.arraycopy(chars, 0, map[i], 0, chars.length);
+        }
+        if (newDeployments == null) {
+            newDeployments = new HashMap<>();
+            for (Map.Entry<Coordinate, Unit> entry : battle.unitsDeployment().entrySet()) {
+                Coordinate c = entry.getKey();
+                Unit u = entry.getValue();
+                newDeployments.put(c, new Unit(u.unitKind(), u.attack(), u.hp()));
+            }
+        }
+        return new Battle(map, newDeployments);
+    }
+
+    long part2() {
+        Battle battle = copy(this.battle, null);
+        BattleResult battleResult = battle(battle);
+        int attackAdjustement = battleResult.defeatedUnits().stream()
+                .filter(unit -> unit.unitKind() == UnitKind.ELF)
+                .mapToInt(unit -> unit.enemiesHpAndMomentOfDefeat / unit.attacks + (unit.enemiesHpAndMomentOfDefeat % unit.attacks == 0 ? 0 : 1))
+                .max()
+                .orElseThrow();
+        battleResult = battleWithElvesEnhancement(attackAdjustement);
+        int lowerBound, upperBound;
+        if (noElfKilled(battleResult)) {
+            upperBound = attackAdjustement;
+            int[] bounds = findLowerBound(upperBound);
+            lowerBound = bounds[0];
+            upperBound = bounds[1];
+        } else {
+            lowerBound = attackAdjustement;
+            int[] bounds = findUpperBound(lowerBound);
+            lowerBound = bounds[0];
+            upperBound = bounds[1];
+        }
+        for (int i = lowerBound; i <= upperBound; i+=2) {
+            System.out.println("checking " + i);
+            battleResult = battleWithElvesEnhancement(i);
+            if (noElfKilled(battleResult)){
+                BattleResult battleResultPrev = battleWithElvesEnhancement(i -1);
+                if (noElfKilled(battleResultPrev)){
+                    return (long) battleResultPrev.battle().sumHpOfRemainingUnits() * battleResultPrev.completedRounds();
+                }
+                return (long) battleResult.battle().sumHpOfRemainingUnits() * battleResult.completedRounds();
+            }
+        }
+        throw new RuntimeException();
+    }
+
+    private int[] findLowerBound(int upperBound) {
+        int upper = upperBound;
+        int lower = upperBound / 2;
+        System.out.println("upper = " + upper);
+        System.out.println("lower = " + lower);
+        while (true) {
+            BattleResult battleResult = battleWithElvesEnhancement(lower);
+            if (!noElfKilled(battleResult)) return new int[]{lower, upper};
+            upper = lower;
+            lower = upper / 2;
+            System.out.println("upper = " + upper);
+            System.out.println("lower = " + lower);
+        }
+    }
+
+    private int[] findUpperBound(int lowerBound) {
+        int lower = lowerBound;
+        int upper = lowerBound * 2;
+        System.out.println("upper = " + upper);
+        System.out.println("lower = " + lower);
+        while (true) {
+            BattleResult battleResult = battleWithElvesEnhancement(upper);
+            if (!noElfKilled(battleResult)) return new int[]{lower, upper};
+            lower = upper;
+            upper = lower * 2;
+            System.out.println("upper = " + upper);
+            System.out.println("lower = " + lower);
+        }
+    }
+
+    private boolean noElfKilled(BattleResult battleResult) {
+        return battleResult.defeatedUnits.stream().noneMatch(u -> u.unitKind() == UnitKind.ELF);
+    }
+
+    private BattleResult battleWithElvesEnhancement(int attackAdjustement) {
+        Map<Coordinate, Unit> newDeployments = new HashMap<>();
+        for (Map.Entry<Coordinate, Unit> entry : this.battle.unitsDeployment().entrySet()) {
+            Coordinate key = entry.getKey();
+            Unit value = entry.getValue();
+            if (value.unitKind() == UnitKind.GOBLIN) {
+                newDeployments.put(key, new Unit(value.unitKind(), value.attack(), value.hp()));
+            } else {
+                newDeployments.put(key, new Unit(value.unitKind(), value.attack() + attackAdjustement, 200));
+            }
+        }
+        Battle battle = copy(this.battle, newDeployments);
+        return battle(battle);
+    }
+
+    private BattleResult battle(Battle battle) {
         int roundsCompleted = 0;
+        List<Unit> defeatedUnits = new ArrayList<>();
         while (true) {
             RoundResult roundResult = round(battle);
-            totalMoves += roundResult.roundMoves();
-            totalDamage += roundResult.roundDamage();
+            defeatedUnits.addAll(roundResult.defeatedUnits());
             if (!roundResult.roundCompleted()) {
-                return (long) roundsCompleted * battle.sumHpOfRemainingUnits();
+                break;
             }
             roundsCompleted++;
             if (roundResult.roundDamage() + roundResult.roundMoves() == 0)
                 break;
         }
-        return (long) roundsCompleted * battle.sumHpOfRemainingUnits();
+        return new BattleResult(battle, roundsCompleted, defeatedUnits);
     }
+
+    public record BattleResult(Battle battle, int completedRounds, List<Unit> defeatedUnits) {
+    }
+
 
     private RoundResult round(Battle battle) {
         int roundMoves = 0;
@@ -48,19 +156,21 @@ public class Day15 {
                 .stream()
                 .sorted(Map.Entry.comparingByKey(BY_Y_THEN_X))
                 .collect(Collectors.toCollection(ArrayList::new));
+
+        List<Unit> defeatedUnits = new ArrayList<>();
         while (!unitsInMoveOrder.isEmpty()) {
             Map.Entry<Coordinate, Unit> unit = unitsInMoveOrder.removeFirst();
             Coordinate unitFinalPosition = unit.getKey();
-            Map.Entry<Coordinate, Unit> target = getTargets(unit)
+            Map.Entry<Coordinate, Unit> target = getTargets(battle, unit)
                     .stream()
                     .filter(targetDeployment -> isInRange(unit.getKey(), targetDeployment))
                     .min(Map.Entry.<Coordinate, Unit>comparingByValue(Comparator.comparing(Unit::hp))
                             .thenComparing(Map.Entry.comparingByKey(BY_Y_THEN_X)))
                     .orElse(null);
             if (target == null) {
-                int[][] distances = distances(unit);
+                int[][] distances = distances(battle, unit);
 
-                Coordinate targetLocation = getTargets(unit)
+                Coordinate targetLocation = getTargets(battle, unit)
                         .stream()
                         .filter(targetDeployment -> isAccessible(targetDeployment.getKey(), battle.map()))
                         .flatMap(targetDeployment -> Stream.of(targetDeployment.getKey().up(), targetDeployment.getKey().down(), targetDeployment.getKey().left(), targetDeployment.getKey().right()))
@@ -76,7 +186,7 @@ public class Day15 {
                             .filter(c -> {
                                 ArrayList<Coordinate> path = new ArrayList<>();
                                 path.add(c);
-                                return canAccessTarget(distances, c, targetLocation, path);
+                                return canAccessTarget(battle, distances, c, targetLocation, path);
                             })
                             .min(BY_Y_THEN_X)
                             .orElse(null);
@@ -90,7 +200,7 @@ public class Day15 {
                     }
                 }
                 Coordinate unitFinalPositionCopy = unitFinalPosition;
-                target = getTargets(unit)
+                target = getTargets(battle, unit)
                         .stream()
                         .filter(targetDeployment -> isInRange(unitFinalPositionCopy, targetDeployment))
                         .min(Comparator.<Map.Entry<Coordinate, Unit>, Integer>comparing(c -> c.getValue().hp())
@@ -98,21 +208,31 @@ public class Day15 {
                         .orElse(null);
             }
             if (target != null) {
+                unit.getValue().storeAttack();
                 roundDamage += target.getValue().damage(unit.getValue().attack());
                 if (target.getValue().hp() <= 0) {
+                    defeatedUnits.add(target.getValue());
+                    Coordinate targetLocation = target.getKey();
+                    target.getValue().enemiesHpAndMomentOfDefeat(
+                            getTargets(battle, target)
+                                    .stream()
+                                    .filter(e -> e.getKey().manhattanDistance(targetLocation) == 1)
+                                    .mapToInt(e -> e.getValue().hp())
+                                    .sum()
+                    );
                     battle.unitsDeployment().remove(target.getKey());
                     battle.setCoordinate(target.getKey(), '.');
                     unitsInMoveOrder.remove(target);
                 }
             }
-            if (getTargets(unit).isEmpty() && !unitsInMoveOrder.isEmpty()) {
-                return new RoundResult(roundMoves, roundDamage, false, battle.sumHpOfRemainingUnits(), battle.goblins(), battle.elves());
+            if (getTargets(battle, unit).isEmpty() && !unitsInMoveOrder.isEmpty()) {
+                return new RoundResult(roundMoves, roundDamage, false, battle.sumHpOfRemainingUnits(), battle.goblins(), battle.elves(), defeatedUnits);
             }
         }
-        return new RoundResult(roundMoves, roundDamage, true, battle.sumHpOfRemainingUnits(), battle.goblins(), battle.elves());
+        return new RoundResult(roundMoves, roundDamage, true, battle.sumHpOfRemainingUnits(), battle.goblins(), battle.elves(), defeatedUnits);
     }
 
-    private boolean canAccessTarget(int[][] distances, Coordinate source, Coordinate target, List<Coordinate> path) {
+    private boolean canAccessTarget(Battle battle, int[][] distances, Coordinate source, Coordinate target, List<Coordinate> path) {
         if (source.equals(target)) {
             return true;
         }
@@ -122,7 +242,7 @@ public class Day15 {
             if (c.getValue(distances) != source.getValue(distances) + 1) continue;
             if (c.getValue(distances) > target.getValue(distances)) continue;
             path.add(c);
-            if (canAccessTarget(distances, c, target, path)) {
+            if (canAccessTarget(battle, distances, c, target, path)) {
                 return true;
             }
             path.remove(c);
@@ -131,10 +251,10 @@ public class Day15 {
     }
 
     private record RoundResult(int roundMoves, int roundDamage, boolean roundCompleted, int hpOfRemainingUnits,
-                               int goblins, int elves) {
+                               int goblins, int elves, List<Unit> defeatedUnits) {
     }
 
-    private int[][] distances(Map.Entry<Coordinate, Unit> unit) {
+    private int[][] distances(Battle battle, Map.Entry<Coordinate, Unit> unit) {
         int[][] distances = new int[battle.map.length][battle.map[0].length];
         for (int[] distance : distances) {
             Arrays.fill(distance, Integer.MAX_VALUE);
@@ -209,16 +329,12 @@ public class Day15 {
                 .anyMatch(c -> map[c.y()][c.x()] == '.');
     }
 
-    private List<Map.Entry<Coordinate, Unit>> getTargets(Map.Entry<Coordinate, Unit> unit) {
+    private List<Map.Entry<Coordinate, Unit>> getTargets(Battle battle, Map.Entry<Coordinate, Unit> unit) {
         return battle.unitsDeployment()
                 .entrySet()
                 .stream()
                 .filter(unitDeployment -> unitDeployment.getValue().unitKind() != unit.getValue().unitKind())
                 .collect(Collectors.toCollection(ArrayList::new));
-    }
-
-    long part2() {
-        return 0L;
     }
 
     public record Battle(char[][] map, Map<Coordinate, Unit> unitsDeployment) {
@@ -307,11 +423,15 @@ public class Day15 {
         private final UnitKind unitKind;
         private final int attack;
         private int hp;
+        private int attacks;
+        private int enemiesHpAndMomentOfDefeat;
 
         public Unit(UnitKind unitKind, int attack, int hp) {
             this.unitKind = unitKind;
             this.attack = attack;
             this.hp = hp;
+            this.attacks = 0;
+            this.enemiesHpAndMomentOfDefeat = 0;
         }
 
         public UnitKind unitKind() {
@@ -331,6 +451,14 @@ public class Day15 {
             if (hp < 0)
                 return damage + hp;
             return damage;
+        }
+
+        public void storeAttack() {
+            attacks++;
+        }
+
+        public void enemiesHpAndMomentOfDefeat(int enemiesHpAndMomentOfDefeat) {
+            this.enemiesHpAndMomentOfDefeat = enemiesHpAndMomentOfDefeat;
         }
 
         @Override

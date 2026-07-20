@@ -30,7 +30,7 @@ class Day15Test {
 
     @Test
     void testPart2() {
-        assertEquals(0L, day15.part2());
+        assertEquals(60864L, day15.part2());
     }
 
     @ParameterizedTest
