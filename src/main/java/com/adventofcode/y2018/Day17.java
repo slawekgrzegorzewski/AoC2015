@@ -24,13 +24,16 @@ public class Day17 {
     long part1() {
         List<Coordinate> waterStream = new ArrayList<>();
         HashSet<Coordinate> reservoirs = new HashSet<>();
-        followStream(waterStream, reservoirs, new Coordinate(500, 0));
+
+        Coordinate startWith = new Coordinate(500, 0);
+        addToWaterStream(waterStream, reservoirs, startWith);
+        followStream(waterStream, reservoirs, startWith);
+
         print(waterStream, reservoirs);
         return reservoirs.size() + waterStream.stream().mapToInt(Coordinate::y).filter(y -> y >= minY && y <= maxY).count();
     }
 
     private void followStream(List<Coordinate> waterStream, HashSet<Coordinate> reservoirs, Coordinate startWith) {
-        addToWaterStream(waterStream, reservoirs, startWith);
         Coordinate nextPosition = startWith;
         while (nextPosition.y() <= maxY) {
             print(waterStream, reservoirs);
@@ -39,30 +42,48 @@ public class Day17 {
                 addToWaterStream(waterStream, reservoirs, nextPosition);
                 continue;
             }
-            nextPosition = nextPosition.up();
-            Coordinate nextPositionLeft = tryDirection(nextPosition, reservoirs, Coordinate::left);
-            Coordinate nextPositionRight = tryDirection(nextPosition, reservoirs, Coordinate::right);
-            if (nextPositionLeft.y() == nextPosition.y()) {
-                if (nextPositionRight.y() == nextPosition.y()) {
-                    for (int x = nextPositionLeft.x(); x <= nextPositionRight.x(); x++) {
-                        Coordinate newWater = new Coordinate(x, nextPosition.y());
-                        addToReservoirs(waterStream, reservoirs, newWater);
-                    }
-                    waterStream.remove(nextPosition);
-                    nextPosition = nextPosition.up();
-                }
+            followStreamInDirection(waterStream, reservoirs, nextPosition.up(), Coordinate::left);
+//            nextPosition = nextPosition.up();
+//            Coordinate nextPositionLeft = tryDirection(nextPosition, reservoirs, Coordinate::left);
+//            Coordinate nextPositionRight = tryDirection(nextPosition, reservoirs, Coordinate::right);
+//            if (nextPositionLeft.y() == nextPosition.y()) {
+//                if (nextPositionRight.y() == nextPosition.y()) {
+//                    for (int x = nextPositionLeft.x(); x <= nextPositionRight.x(); x++) {
+//                        Coordinate newWater = new Coordinate(x, nextPosition.y());
+//                        addToReservoirs(waterStream, reservoirs, newWater);
+//                    }
+//                    waterStream.remove(nextPosition);
+//                    nextPosition = nextPosition.up();
+//                }
+//            }
+//            if (nextPositionLeft.y() != nextPosition.y() + 1) {
+//                for (int x = nextPositionLeft.x(); x <= nextPosition.x(); x++) {
+//                    addToWaterStream(waterStream, reservoirs, new Coordinate(x, nextPosition.y() + 1));
+//                }
+//                followStream(waterStream, reservoirs, nextPositionLeft);
+//            }
+//            if (nextPositionRight.y() != nextPosition.y() + 1) {
+//                for (int x = nextPosition.x(); x <= nextPositionRight.x(); x++) {
+//                    addToWaterStream(waterStream, reservoirs, new Coordinate(x, nextPosition.y() + 1));
+//                }
+//                followStream(waterStream, reservoirs, nextPositionRight);
+//            }
+        }
+    }
+
+    private void followStreamInDirection(List<Coordinate> waterStream, HashSet<Coordinate> reservoirs, Coordinate startWith, Function<Coordinate, Coordinate> nextPositionProvider) {
+        Coordinate nextPosition = startWith;
+        while (true) {
+            Coordinate currentPosition = nextPosition;
+            nextPosition = nextPositionProvider.apply(currentPosition);
+            boolean nextPositionBlocked = flowIsBlocked(nextPosition, reservoirs);
+            boolean positionBelowBlocked = flowIsBlocked(currentPosition.down(), reservoirs);
+            if (!nextPositionBlocked && positionBelowBlocked) {
+                addToWaterStream(waterStream, reservoirs, nextPosition);
+                continue;
             }
-            if (nextPositionLeft.y() != nextPosition.y() + 1) {
-                for (int x = nextPositionLeft.x(); x <= nextPosition.x(); x++) {
-                    addToWaterStream(waterStream, reservoirs, new Coordinate(x, nextPosition.y() + 1));
-                }
-                followStream(waterStream, reservoirs, nextPositionLeft);
-            }
-            if (nextPositionRight.y() != nextPosition.y() + 1) {
-                for (int x = nextPosition.x(); x <= nextPositionRight.x(); x++) {
-                    addToWaterStream(waterStream, reservoirs, new Coordinate(x, nextPosition.y() + 1));
-                }
-                followStream(waterStream, reservoirs, nextPositionRight);
+            if (!positionBelowBlocked) {
+                followStream(waterStream, reservoirs, currentPosition);
             }
         }
     }
