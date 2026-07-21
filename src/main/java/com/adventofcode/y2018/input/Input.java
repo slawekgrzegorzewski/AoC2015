@@ -198,8 +198,12 @@ public class Input {
         return new Day16.ManualData(commandSamples, program);
     }
 
-    public static List<String> day17() throws IOException {
-        return getInputFromFile("/y2018/day17");
+    public static HashSet<Day17.Coordinate> day17() throws IOException {
+        return getInputFromFile("/y2018/day17")
+                .stream()
+                .map(Day17.Coordinate::parse)
+                .flatMap(List::stream)
+                .collect(Collectors.toCollection(HashSet::new));
     }
 
     public static List<String> day18() throws IOException {
