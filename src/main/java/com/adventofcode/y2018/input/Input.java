@@ -206,8 +206,11 @@ public class Input {
                 .collect(Collectors.toCollection(HashSet::new));
     }
 
-    public static List<String> day18() throws IOException {
-        return getInputFromFile("/y2018/day18");
+    public static char[][] day18() throws IOException {
+        return getInputFromFile("/y2018/day18")
+                .stream()
+                .map(String::toCharArray)
+                .toArray(char[][]::new);
     }
 
     public static List<String> day19() throws IOException {
