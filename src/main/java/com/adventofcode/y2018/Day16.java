@@ -8,7 +8,8 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 public class Day16 {
-    public static final Map<String, BiFunction<ProgramState, Command, Integer>> COMMANDS = new HashMap<>();
+    public static final Map<String, BiFunction<ProgramState, CommandParameters, Integer>> COMMANDS = new HashMap<>();
+    public static final Map<String, BiFunction<ProgramState, CommandParameters, String>> JAVA = new HashMap<>();
     private final ManualData manualData;
 
     static {
@@ -28,6 +29,27 @@ public class Day16 {
         COMMANDS.put("eqir", (ps, command) -> ps.registers[command.thirdArgument()] = command.firstArgument() == ps.registers[command.secondArgument()] ? 1 : 0);
         COMMANDS.put("eqri", (ps, command) -> ps.registers[command.thirdArgument()] = ps.registers[command.firstArgument()] == command.secondArgument() ? 1 : 0);
         COMMANDS.put("eqrr", (ps, command) -> ps.registers[command.thirdArgument()] = ps.registers[command.firstArgument()] == ps.registers[command.secondArgument()] ? 1 : 0);
+
+        JAVA.put("addr", (_, command) -> toLetter(command.thirdArgument()) + " = " + toLetter(command.firstArgument()) + " + " + toLetter(command.secondArgument()) + ";");
+        JAVA.put("addi", (_, command) -> toLetter(command.thirdArgument()) + " = " + toLetter(command.firstArgument()) + " + " + command.secondArgument() + ";");
+        JAVA.put("mulr", (_, command) -> toLetter(command.thirdArgument()) + " = " + toLetter(command.firstArgument()) + " * " + toLetter(command.secondArgument()) + ";");
+        JAVA.put("muli", (_, command) -> toLetter(command.thirdArgument()) + " = " + toLetter(command.firstArgument()) + " * " + command.secondArgument() + ";");
+        JAVA.put("banr", (_, command) -> toLetter(command.thirdArgument()) + " = " + toLetter(command.firstArgument()) + " & " + toLetter(command.secondArgument()) + ";");
+        JAVA.put("bani", (_, command) -> toLetter(command.thirdArgument()) + " = " + toLetter(command.firstArgument()) + " & " + command.secondArgument() + ";");
+        JAVA.put("borr", (_, command) -> toLetter(command.thirdArgument()) + " = " + toLetter(command.firstArgument()) + " | " + toLetter(command.secondArgument()) + ";");
+        JAVA.put("bori", (_, command) -> toLetter(command.thirdArgument()) + " = " + toLetter(command.firstArgument()) + " | " + command.secondArgument() + ";");
+        JAVA.put("setr", (_, command) -> toLetter(command.thirdArgument()) + " = " + toLetter(command.firstArgument()) + ";");
+        JAVA.put("seti", (_, command) -> toLetter(command.thirdArgument()) + " = " + command.firstArgument() + ";");
+        JAVA.put("gtir", (_, command) -> toLetter(command.thirdArgument()) + " = " + command.firstArgument() + " > " + toLetter(command.secondArgument()) + "? 1 : 0" + ";");
+        JAVA.put("gtri", (_, command) -> toLetter(command.thirdArgument()) + " = " + toLetter(command.firstArgument()) + " > " + command.secondArgument() + "? 1 : 0" + ";");
+        JAVA.put("gtrr", (_, command) -> toLetter(command.thirdArgument()) + " = " + toLetter(command.firstArgument()) + " > " + toLetter(command.secondArgument()) + "? 1 : 0" + ";");
+        JAVA.put("eqir", (_, command) -> toLetter(command.thirdArgument()) + " = " + command.firstArgument() + " == " + toLetter(command.secondArgument()) + "? 1 : 0" + ";");
+        JAVA.put("eqri", (_, command) -> toLetter(command.thirdArgument()) + " = " + toLetter(command.firstArgument()) + " == " + command.secondArgument() + "? 1 : 0" + ";");
+        JAVA.put("eqrr", (_, command) -> toLetter(command.thirdArgument()) + " = " + toLetter(command.firstArgument()) + " == " + toLetter(command.secondArgument()) + "? 1 : 0" + ";");
+    }
+
+    public static char toLetter(int index) {
+        return (char) ('a' + index);
     }
 
     public Day16() throws IOException {
@@ -81,10 +103,13 @@ public class Day16 {
 
 
         ProgramState ps = new ProgramState(new int[]{0, 0, 0, 0});
-        manualData.program()
-                .forEach(command -> COMMANDS
-                        .get(numberToPossibleCommand.get(command.instructionCode()).getFirst())
-                        .apply(ps, command));
+        while (ps.getInstructionPointer() < manualData.program().size()) {
+            Command command = manualData.program().get(ps.getInstructionPointer());
+            COMMANDS
+                    .get(numberToPossibleCommand.get(command.instructionCode()).getFirst())
+                    .apply(ps, command);
+            ps.setInstructionPointer(ps.getInstructionPointer() + 1);
+        }
         return new Result(threeOrMorePossibleCommands, ps);
     }
 
@@ -94,7 +119,50 @@ public class Day16 {
     public record ManualData(List<CommandSample> samples, List<Command> program) {
     }
 
-    public record Command(int instructionCode, int firstArgument, int secondArgument, int thirdArgument) {
+    public interface CommandParameters {
+
+        int firstArgument();
+
+        int secondArgument();
+
+        int thirdArgument();
+    }
+
+    public static final class Command implements CommandParameters {
+        private final int instructionCode;
+        private final int firstArgument;
+        private final int secondArgument;
+        private final int thirdArgument;
+
+        public Command(int instructionCode, int firstArgument, int secondArgument, int thirdArgument) {
+            this.instructionCode = instructionCode;
+            this.firstArgument = firstArgument;
+            this.secondArgument = secondArgument;
+            this.thirdArgument = thirdArgument;
+        }
+
+        public static Command parse(String value) {
+            int[] commandParts = Arrays.stream(value.split(" "))
+                    .mapToInt(Integer::parseInt)
+                    .toArray();
+            return new Command(commandParts[0], commandParts[1], commandParts[2], commandParts[3]);
+        }
+
+        public int instructionCode() {
+            return instructionCode;
+        }
+
+        public int firstArgument() {
+            return firstArgument;
+        }
+
+        public int secondArgument() {
+            return secondArgument;
+        }
+
+        public int thirdArgument() {
+            return thirdArgument;
+        }
     }
 
     public record CommandSample(int[] registersBefore, int[] registersAfter, Command command) {
@@ -107,13 +175,33 @@ public class Day16 {
 
     public static final class ProgramState {
         private final int[] registers;
+        private int instructionPointer;
+        private int instructionPointerBind;
 
         public ProgramState(int[] registers) {
             this.registers = registers;
+            this.instructionPointer = 0;
+            this.instructionPointerBind = -1;
         }
 
         public int[] registers() {
             return registers;
+        }
+
+        public int getInstructionPointer() {
+            return instructionPointer;
+        }
+
+        public void setInstructionPointer(int instructionPointer) {
+            this.instructionPointer = instructionPointer;
+        }
+
+        public int getInstructionPointerBind() {
+            return instructionPointerBind;
+        }
+
+        public void setInstructionPointerBind(int instructionPointerBind) {
+            this.instructionPointerBind = instructionPointerBind;
         }
     }
 }

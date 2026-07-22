@@ -189,11 +189,7 @@ public class Input {
         }
         List<Day16.Command> program = new ArrayList<>();
         for (i += 2; i < lines.size(); i++) {
-            int[] commandParts = Arrays.stream(lines.get(i).split(" "))
-                    .mapToInt(Integer::parseInt)
-                    .toArray();
-            Day16.Command command = new Day16.Command(commandParts[0], commandParts[1], commandParts[2], commandParts[3]);
-            program.add(command);
+            program.add(Day16.Command.parse(lines.get(i)));
         }
         return new Day16.ManualData(commandSamples, program);
     }
@@ -213,8 +209,16 @@ public class Input {
                 .toArray(char[][]::new);
     }
 
-    public static List<String> day19() throws IOException {
-        return getInputFromFile("/y2018/day19");
+    public static Day19.ProgramAndState day19() throws IOException {
+        List<String> lines = getInputFromFile("/y2018/day19");
+        Day16.ProgramState programState = new Day16.ProgramState(new int[]{0, 0, 0, 0, 0, 0});
+        programState.setInstructionPointerBind(Integer.parseInt(lines.getFirst().replace("#ip ", "")));
+        return new Day19.ProgramAndState(
+                lines.stream().skip(1)
+                        .map(Day19.Command::parse)
+                        .toList(),
+                programState);
+
     }
 
     public static List<String> day20() throws IOException {
