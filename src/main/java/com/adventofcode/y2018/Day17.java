@@ -3,16 +3,14 @@ package com.adventofcode.y2018;
 import com.adventofcode.y2018.input.Input;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.IntSummaryStatistics;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 
 public class Day17 {
+    private static final Function<Coordinate, Coordinate> LEFT = Coordinate::left;
+    private static final Function<Coordinate, Coordinate> RIGHT = Coordinate::right;
     private final HashSet<Coordinate> clays;
     private final int minY, maxY;
-
 
     public Day17() throws IOException {
         this.clays = Input.day17();
@@ -22,131 +20,89 @@ public class Day17 {
     }
 
     long part1() {
-        List<Coordinate> waterStream = new ArrayList<>();
-        HashSet<Coordinate> reservoirs = new HashSet<>();
-
-        Coordinate startWith = new Coordinate(500, 0);
-        addToWaterStream(waterStream, reservoirs, startWith);
-        followStream(waterStream, reservoirs, startWith);
-
-        print(waterStream, reservoirs);
-        return reservoirs.size() + waterStream.stream().mapToInt(Coordinate::y).filter(y -> y >= minY && y <= maxY).count();
-    }
-
-    private void followStream(List<Coordinate> waterStream, HashSet<Coordinate> reservoirs, Coordinate startWith) {
-        Coordinate nextPosition = startWith;
-        while (nextPosition.y() <= maxY) {
-            print(waterStream, reservoirs);
-            nextPosition = nextPosition.down();
-            if (!flowIsBlocked(nextPosition, reservoirs)) {
-                addToWaterStream(waterStream, reservoirs, nextPosition);
-                continue;
-            }
-            followStreamInDirection(waterStream, reservoirs, nextPosition.up(), Coordinate::left);
-//            nextPosition = nextPosition.up();
-//            Coordinate nextPositionLeft = tryDirection(nextPosition, reservoirs, Coordinate::left);
-//            Coordinate nextPositionRight = tryDirection(nextPosition, reservoirs, Coordinate::right);
-//            if (nextPositionLeft.y() == nextPosition.y()) {
-//                if (nextPositionRight.y() == nextPosition.y()) {
-//                    for (int x = nextPositionLeft.x(); x <= nextPositionRight.x(); x++) {
-//                        Coordinate newWater = new Coordinate(x, nextPosition.y());
-//                        addToReservoirs(waterStream, reservoirs, newWater);
-//                    }
-//                    waterStream.remove(nextPosition);
-//                    nextPosition = nextPosition.up();
-//                }
-//            }
-//            if (nextPositionLeft.y() != nextPosition.y() + 1) {
-//                for (int x = nextPositionLeft.x(); x <= nextPosition.x(); x++) {
-//                    addToWaterStream(waterStream, reservoirs, new Coordinate(x, nextPosition.y() + 1));
-//                }
-//                followStream(waterStream, reservoirs, nextPositionLeft);
-//            }
-//            if (nextPositionRight.y() != nextPosition.y() + 1) {
-//                for (int x = nextPosition.x(); x <= nextPositionRight.x(); x++) {
-//                    addToWaterStream(waterStream, reservoirs, new Coordinate(x, nextPosition.y() + 1));
-//                }
-//                followStream(waterStream, reservoirs, nextPositionRight);
-//            }
-        }
-    }
-
-    private void followStreamInDirection(List<Coordinate> waterStream, HashSet<Coordinate> reservoirs, Coordinate startWith, Function<Coordinate, Coordinate> nextPositionProvider) {
-        Coordinate nextPosition = startWith;
-        while (true) {
-            Coordinate currentPosition = nextPosition;
-            nextPosition = nextPositionProvider.apply(currentPosition);
-            boolean nextPositionBlocked = flowIsBlocked(nextPosition, reservoirs);
-            boolean positionBelowBlocked = flowIsBlocked(currentPosition.down(), reservoirs);
-            if (!nextPositionBlocked && positionBelowBlocked) {
-                addToWaterStream(waterStream, reservoirs, nextPosition);
-                continue;
-            }
-            if (!positionBelowBlocked) {
-                followStream(waterStream, reservoirs, currentPosition);
-            }
-        }
-    }
-
-    private static void addToWaterStream(List<Coordinate> waterStream, HashSet<Coordinate> reservoirs, Coordinate newWaterStream) {
-        if (!reservoirs.contains(newWaterStream) && !waterStream.contains(newWaterStream))
-            waterStream.add(newWaterStream);
-    }
-
-    private static void addToReservoirs(List<Coordinate> waterStream, HashSet<Coordinate> reservoirs, Coordinate newReservoir) {
-        reservoirs.add(newReservoir);
-        waterStream.remove(newReservoir);
-    }
-
-    private void print(List<Coordinate> waterStream, HashSet<Coordinate> reservoirs) {
-        IntSummaryStatistics xStats = clays.stream().mapToInt(Coordinate::x).summaryStatistics();
-        IntSummaryStatistics yStats = clays.stream().mapToInt(Coordinate::y).summaryStatistics();
-        for (int y = yStats.getMin(); y <= yStats.getMax(); y++) {
-            for (int x = xStats.getMin(); x <= xStats.getMax(); x++) {
-                Coordinate position = new Coordinate(x, y);
-                if (clays.contains(position)) System.out.print("#");
-                else if (waterStream.contains(position)) System.out.print("|");
-                else if (reservoirs.contains(position)) System.out.print("~");
-                else System.out.print(".");
-            }
-            System.out.println();
-        }
-        System.out.println();
-    }
-
-    private boolean flowIsBlocked(Coordinate position, HashSet<Coordinate> reservoirs) {
-        return clays.contains(position) || reservoirs.contains(position);
-    }
-
-    private Coordinate tryDirection(Coordinate nextPosition, HashSet<Coordinate> reservoirs, Function<Coordinate, Coordinate> nextProvider) {
-        Coordinate next = nextPosition;
-        while (true) {
-            Coordinate next2 = nextProvider.apply(next);
-            if (flowIsBlocked(next2, reservoirs)) {
-                return next;
-            }
-            next = next2;
-            Coordinate below = next.down();
-            if (!flowIsBlocked(below, reservoirs))
-                return below;
-        }
+        CaveState caveState = floodCave();
+        return caveState.waterStream().stream().map(Coordinate::y).filter(y -> y <= maxY && y >= minY).count() + caveState.reservoirs().size();
     }
 
     long part2() {
-        return 0L;
+        return floodCave().reservoirs().size();
+    }
+
+    private CaveState floodCave() {
+        CaveState caveState = new CaveState(clays, new HashSet<>(), new HashSet<>(), new HashMap<>());
+        Coordinate startWith = new Coordinate(500, 0);
+        caveState.waterStream().add(startWith);
+        followStream(caveState, startWith);
+        return caveState;
+    }
+
+    private void followStream(CaveState caveState, Coordinate startWith) {
+        Coordinate nextPosition = startWith;
+        while (nextPosition.y() <= maxY) {
+            nextPosition = nextPosition.down();
+            if (!caveState.flowIsBlocked(nextPosition)) {
+                caveState.waterStream().add(nextPosition);
+            } else {
+                nextPosition = nextPosition.up();
+                break;
+            }
+        }
+        while (nextPosition.y() < maxY) {
+            OptionalInt leftEnd = followStreamInDirection(caveState, nextPosition, LEFT);
+            OptionalInt rightEnd = followStreamInDirection(caveState, nextPosition, RIGHT);
+            if (leftEnd.isPresent() && rightEnd.isPresent()) {
+                for (int x = leftEnd.getAsInt(); x <= rightEnd.getAsInt(); x++) {
+                    Coordinate newReservoir = new Coordinate(x, nextPosition.y());
+                    caveState.reservoirs().add(newReservoir);
+                    caveState.waterStream().remove(newReservoir);
+                }
+                nextPosition = nextPosition.up();
+            } else {
+                break;
+            }
+        }
+    }
+
+    private OptionalInt followStreamInDirection(CaveState caveState, Coordinate startWith, Function<Coordinate, Coordinate> nextPositionProvider) {
+        DirectedStreamCacheKey directedStreamCacheKey = new DirectedStreamCacheKey(startWith, nextPositionProvider);
+        OptionalInt result = caveState.directedStreamCache().get(directedStreamCacheKey);
+        if (result != null) {
+            return result;
+        }
+        Coordinate currentPosition = startWith;
+        while (true) {
+            boolean positionBelowBlocked = caveState.flowIsBlocked(currentPosition.down());
+            if (!positionBelowBlocked) {
+                followStream(caveState, currentPosition);
+            }
+            positionBelowBlocked = caveState.flowIsBlocked(currentPosition.down());
+            if (!positionBelowBlocked) {
+                caveState.directedStreamCache().put(directedStreamCacheKey, OptionalInt.empty());
+                return OptionalInt.empty();
+            }
+
+            Coordinate nextPosition = nextPositionProvider.apply(currentPosition);
+            boolean nextPositionBlocked = caveState.flowIsBlocked(nextPosition);
+            if (nextPositionBlocked) {
+                caveState.directedStreamCache().put(directedStreamCacheKey, OptionalInt.of(currentPosition.x()));
+                return OptionalInt.of(currentPosition.x());
+            }
+            caveState.waterStream().add(nextPosition);
+            currentPosition = nextPosition;
+        }
     }
 
     public record Coordinate(int x, int y) {
-        public static List<Coordinate> parse(String value) {
+        public static HashSet<Coordinate> parse(String value) {
             String[] split = value.split(", ");
             Range xRange, yRange;
             boolean xFirst = split[0].startsWith("x");
             xRange = Range.parse(split[xFirst ? 0 : 1].replace("x=", ""));
             yRange = Range.parse(split[xFirst ? 1 : 0].replace("y=", ""));
-            List<Coordinate> coordinates = new ArrayList<>();
+            HashSet<Coordinate> coordinates = new HashSet<>();
             for (int x = xRange.fromInclusive(); x <= xRange.toInclusive(); x++) {
                 for (int y = yRange.fromInclusive(); y <= yRange.toInclusive(); y++) {
-                    addToWaterStream(coordinates, new HashSet<>(), new Coordinate(x, y));
+                    coordinates.add(new Coordinate(x, y));
                 }
             }
             return coordinates;
@@ -167,6 +123,18 @@ public class Day17 {
         public Coordinate right() {
             return new Coordinate(x + 1, y);
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            Coordinate that = (Coordinate) o;
+            return x == that.x && y == that.y;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(x, y);
+        }
     }
 
     public record Range(int fromInclusive, int toInclusive) {
@@ -180,4 +148,19 @@ public class Day17 {
             return new Range(value, value);
         }
     }
+
+    public record CaveState(HashSet<Coordinate> clays,
+                            HashSet<Coordinate> waterStream,
+                            HashSet<Coordinate> reservoirs,
+                            HashMap<DirectedStreamCacheKey, OptionalInt> directedStreamCache) {
+
+        public boolean flowIsBlocked(Coordinate position) {
+            return clays().contains(position) || reservoirs().contains(position);
+        }
+    }
+
+    public record DirectedStreamCacheKey(Coordinate coordinate,
+                                         Function<Coordinate, Coordinate> nextLocationProvider) {
+    }
+
 }

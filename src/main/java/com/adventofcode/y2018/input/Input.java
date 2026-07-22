@@ -202,7 +202,7 @@ public class Input {
         return getInputFromFile("/y2018/day17")
                 .stream()
                 .map(Day17.Coordinate::parse)
-                .flatMap(List::stream)
+                .flatMap(HashSet::stream)
                 .collect(Collectors.toCollection(HashSet::new));
     }
 
