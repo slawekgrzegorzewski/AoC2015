@@ -1,12 +1,10 @@
 package com.adventofcode.y2018;
 
+import com.adventofcode.Utils;
 import com.adventofcode.y2018.input.Input;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.function.Supplier;
 
 public class Day18 {
     private final char[][] map;
@@ -26,50 +24,24 @@ public class Day18 {
     private long simulateNMinutes(int i) {
         char[][] map = copy(this.map);
         char[][] copy = copy(map);
+        Utils.LoopFinder.LoopInfo<Long> loopInfo = new Utils.LoopFinder<>(
+                new Supplier<Long>() {
+                    int currentIndex = 0;
 
-        Set<Long> seen = new HashSet<>();
-        List<Long> loop = new ArrayList<>();
-        int loopCurrentIndex = -1;
-        int loopFirstMinute = -1;
-        long result = -1;
-        boolean loopFound = false;
-        for (int m = 0; m < i; m++) {
-            minute(map, copy, m % 2 == 1);
-            result = evaluate(m % 2 == 1 ? map : copy);
-            if (!seen.add(result)) {
-                if (loopFirstMinute == -1) {
-                    loopFirstMinute = m;
-                    loopCurrentIndex = 0;
-                    loop.add(result);
-                } else {
-                    if (loopFound) {
-                        if (loop.contains(result)) {
-                            if (loop.get(loopCurrentIndex % loop.size()) == result) {
-                                loopCurrentIndex++;
-                            }
-                            if (loopCurrentIndex / loop.size() >= 5) {
-                                return loop.get((i - loopFirstMinute - 1) % loop.size());
-                            }
-                        } else {
-                            loopFirstMinute = -1;
-                            loopFound = false;
-                            loop.clear();
-                            seen.clear();
-                            loopCurrentIndex = -1;
-                        }
-                    } else {
-                        if (loop.contains(result)) {
-                            loopFound = true;
-                            loopCurrentIndex++;
-                        } else {
-                            loop.add(result);
-                            loopCurrentIndex++;
-                        }
+                    @Override
+                    public Long get() {
+                        minute(map, copy, currentIndex % 2 == 1);
+                        return evaluate(currentIndex++ % 2 == 1 ? map : copy);
                     }
-                }
-            }
-        }
-        return result;
+                },
+                result -> result,
+                5)
+                .findLoop()
+                .orElseThrow();
+
+        return i + 1 < loopInfo.loopStart()
+                ? loopInfo.analyzedList().get(i - 1)
+                : loopInfo.analyzedList().get(loopInfo.loopStart() + (i - loopInfo.loopStart() - 1) % loopInfo.loopSize());
     }
 
     private static long evaluate(char[][] map) {

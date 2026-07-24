@@ -5,9 +5,7 @@ import com.adventofcode.y2015.input.Input;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -98,7 +96,60 @@ public class Utils {
         }
     }
 
-    public interface QuadFunction<T, U, V, W, R> {
-        R apply(T t, U u, V v, W w);
+    public static class LoopFinder<T, K> {
+        private final Supplier<T> nextValueProvider;
+        private final Function<T, K> keyExtractor;
+        private final int expectedFullLoops;
+
+        public LoopFinder(Supplier<T> nextValueProvider, Function<T, K> keyExtractor, int expectedFullLoops) {
+            this.nextValueProvider = nextValueProvider;
+            this.keyExtractor = keyExtractor;
+            this.expectedFullLoops = expectedFullLoops;
+        }
+
+        public Optional<LoopInfo<K>> findLoop() {
+            List<K> list = new ArrayList<>();
+            Set<K> unique = new HashSet<>();
+            int index = -1;
+            int lastUniqueSize = 0;
+            int stopGrowingIndex = -1;
+            while (true) {
+                index++;
+                T value = nextValueProvider.get();
+                K key = keyExtractor.apply(value);
+                list.add(key);
+                unique.add(key);
+                if (lastUniqueSize == unique.size()) {
+                    if (stopGrowingIndex == -1) {
+                        stopGrowingIndex = index;
+                    }
+                    if (list.size() - stopGrowingIndex >= expectedFullLoops * (stopGrowingIndex - list.indexOf(list.get(stopGrowingIndex)))) {
+                        int loopStart = list.indexOf(list.get(stopGrowingIndex));
+                        int loopSize = stopGrowingIndex - loopStart;
+                        if (verifyLoop(list, loopStart, loopSize)) {
+                            return Optional.of(new LoopInfo<>(loopStart, loopSize, list));
+                        } else {
+                            return Optional.empty();
+                        }
+                    }
+                } else {
+                    stopGrowingIndex = -1;
+                    lastUniqueSize = unique.size();
+                }
+            }
+        }
+
+        private boolean verifyLoop(List<K> list, int loopStart, int loopSize) {
+            for (int i = loopStart; i < list.size(); i++) {
+                if (!list.get(i).equals(list.get(loopStart + (i - loopStart) % loopSize))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public record LoopInfo<K>(int loopStart, int loopSize, List<K> analyzedList) {
+        }
     }
+
 }

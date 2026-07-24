@@ -225,8 +225,15 @@ public class Input {
         return getInputFromFile("/y2018/day20").getFirst();
     }
 
-    public static List<String> day21() throws IOException {
-        return getInputFromFile("/y2018/day21");
+    public static Day19.ProgramAndState day21() throws IOException {
+        List<String> lines = getInputFromFile("/y2018/day21");
+        Day16.ProgramState programState = new Day16.ProgramState(new int[]{0, 0, 0, 0, 0, 0});
+        programState.setInstructionPointerBind(Integer.parseInt(lines.getFirst().replace("#ip ", "")));
+        return new Day19.ProgramAndState(
+                lines.stream().skip(1)
+                        .map(Day19.Command::parse)
+                        .toList(),
+                programState);
     }
 
     public static List<String> day22() throws IOException {
