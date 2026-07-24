@@ -221,8 +221,8 @@ public class Input {
 
     }
 
-    public static List<String> day20() throws IOException {
-        return getInputFromFile("/y2018/day20");
+    public static String day20() throws IOException {
+        return getInputFromFile("/y2018/day20").getFirst();
     }
 
     public static List<String> day21() throws IOException {
