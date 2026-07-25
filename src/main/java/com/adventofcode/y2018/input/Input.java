@@ -236,8 +236,8 @@ public class Input {
                 programState);
     }
 
-    public static List<String> day22() throws IOException {
-        return getInputFromFile("/y2018/day22");
+    public static Day22.Cave day22() throws IOException {
+        return Day22.Cave.parse(getInputFromFile("/y2018/day22"));
     }
 
     public static List<String> day23() throws IOException {
