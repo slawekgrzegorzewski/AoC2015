@@ -152,4 +152,47 @@ public class Utils {
         }
     }
 
+    public static final class MinHeap {
+        private long[] data = new long[4096];
+        private int size;
+
+        public void push(long value) {
+            if (size == data.length) data = Arrays.copyOf(data, size * 2);
+            int i = size++;
+            data[i] = value;
+            while (i > 0) {
+                int parent = (i - 1) / 2;
+                if (data[parent] <= data[i]) break;
+                swap(parent, i);
+                i = parent;
+            }
+        }
+
+        public long pop() {
+            long min = data[0];
+            data[0] = data[--size];
+            int i = 0;
+            while (true) {
+                int left = (i * 2) + 1;
+                int right = left + 1;
+                int smallest = i;
+                if (left < size && data[left] < data[smallest]) smallest = left;
+                if (right < size && data[right] < data[smallest]) smallest = right;
+                if (smallest == i) break;
+                swap(smallest, i);
+                i = smallest;
+            }
+            return min;
+        }
+
+        public boolean isEmpty() {
+            return size == 0;
+        }
+
+        private void swap(int a, int b) {
+            long tmp = data[a];
+            data[a] = data[b];
+            data[b] = tmp;
+        }
+    }
 }

@@ -1,233 +1,189 @@
 package com.adventofcode.y2018;
 
+import com.adventofcode.Utils;
 import com.adventofcode.y2018.input.Input;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
 
-import static com.adventofcode.y2018.Day22.Equipment.*;
+import static com.adventofcode.y2018.Day22.Equipment.TORCH;
 
 public class Day22 {
-    private final Cave cave;
 
+    private static final int REGION_KINDS = 3;
+    private static final int TOOLS = 3;
+    private static final int MOVE_COST = 1;
+    private static final int SWITCH_COST = 7;
+
+    private final Cave cave;
+    private final byte[] regionTypes;
+    private final int width;
+    private final int height;
 
     public Day22() throws IOException {
         this.cave = Input.day22();
+        int targetX = cave.target().x();
+        int targetY = cave.target().y();
+        byte[] probe = buildRegionTypes(targetX + 1, targetY + 1);
+        int upperBound = estimateUpperBound(probe, targetX + 1);
+        this.width = Math.max(targetX, (upperBound + targetX - targetY) / 2) + 1;
+        this.height = Math.max(targetY, (upperBound + targetY - targetX) / 2) + 1;
+        this.regionTypes = buildRegionTypes(width, height);
     }
 
     long part1() {
-        int[][] erosionLevelMap = buildMaps(cave.depth);
         long riskLevel = 0;
-        for (int x = 0; x <= cave.target.x; x++) {
-            for (int y = 0; y <= cave.target.y; y++) {
-                riskLevel += new Coordinate(x, y).get(erosionLevelMap);
+        for (int y = 0; y <= cave.target().y(); y++) {
+            int rowOffset = y * width;
+            for (int x = 0; x <= cave.target().x(); x++) {
+                riskLevel += regionTypes[rowOffset + x];
             }
         }
         return riskLevel;
     }
 
     long part2() {
-        Coordinate3D start = new Coordinate3D(0, 0, Equipment.TORCH.ordinal());
-        Coordinate3D goal = new Coordinate3D(cave.target.x, cave.target.y, TORCH.ordinal());
+        final int torch = TORCH.ordinal();
+        final int goal = stateOf(cave.target().x(), cave.target().y(), torch);
 
-        int[][] erosionLevelMap = buildMaps(cave.depth);
-        int[][][] distances = new int[cave.depth + 1][cave.depth + 1][3];
-        for (int i = 0; i < cave.depth + 1; i++) {
-            for (int j = 0; j < cave.depth + 1; j++) {
-                Arrays.fill(distances[i][j], Integer.MAX_VALUE);
-            }
+        int[] dist = new int[width * height * TOOLS];
+        Arrays.fill(dist, Integer.MAX_VALUE);
+
+        Utils.MinHeap heap = new Utils.MinHeap();
+        int start = stateOf(0, 0, torch);
+        dist[start] = 0;
+        long value = ((long) 0 << 32) | (start & 0xFFFFFFFFL);
+        heap.push(value);
+        while (!heap.isEmpty()) {
+            long entry = heap.pop();
+            int distance = (int) (entry >>> 32);
+            int state = (int) entry;
+
+            if (distance != dist[state]) continue;
+            if (state == goal) return distance;
+
+            int tool = state % TOOLS;
+            int cell = state / TOOLS;
+            int x = cell % width;
+            int y = cell / width;
+            int regionType = regionTypes[cell];
+
+            addNeighbour(dist, heap, cell * TOOLS + otherTool(regionType, tool), distance + SWITCH_COST);
+
+            int moved = distance + MOVE_COST;
+            if (x > 0) addNeighbourIfAllowed(dist, heap, cell - 1, tool, moved);
+            if (x < width - 1) addNeighbourIfAllowed(dist, heap, cell + 1, tool, moved);
+            if (y > 0) addNeighbourIfAllowed(dist, heap, cell - width, tool, moved);
+            if (y < height - 1) addNeighbourIfAllowed(dist, heap, cell + width, tool, moved);
         }
-        start.setValue(distances, 0);
-        int upperBound = estimateUpperBound(start, goal, erosionLevelMap);
-
-        Set<Coordinate3D> visited = new HashSet<>();
-        Comparator<Coordinate3D> dijkstraComparator = Comparator.comparingInt(node -> node.getValue(distances) + node.convertTo2D().manhattanDistance(goal.convertTo2D()));
-        PriorityQueue<Coordinate3D> queue = new PriorityQueue<>(dijkstraComparator);
-        Map<Coordinate3D, Integer> currentHashes = new HashMap<>();
-
-        queue.add(start);
-        currentHashes.put(start, System.identityHashCode(start));
-
-        while (!queue.isEmpty()) {
-            Coordinate3D current = queue.poll();
-            if (currentHashes.getOrDefault(current, -1) != System.identityHashCode(current))
-                continue;
-            currentHashes.remove(current);
-            visited.add(current);
-            int currentDistance = current.getValue(distances);
-            if (currentDistance > upperBound) {
-                continue;
-            }
-            Coordinate coordinate = current.convertTo2D();
-            for (Coordinate c : new Coordinate[]{coordinate, coordinate.up(), coordinate.down(), coordinate.left(), coordinate.right()}) {
-                if (c.notInBounds(erosionLevelMap)) continue;
-                Coordinate3D neighbor = getLegalMove(current, c, erosionLevelMap).orElse(null);
-                if (neighbor == null) continue;
-                if (visited.contains(neighbor)) continue;
-                int neighborDistance = neighbor.getValue(distances);
-                int moveCost = calculateMoveCost(current, neighbor);
-                if (currentDistance + moveCost < neighborDistance) {
-                    neighborDistance = currentDistance + moveCost;
-                    neighbor.setValue(distances, neighborDistance);
-                    if (neighbor.equals(goal) && neighborDistance < upperBound) {
-                        upperBound = neighborDistance;
-                    }
-                }
-                queue.add(neighbor);
-                currentHashes.put(neighbor, System.identityHashCode(neighbor));
-            }
-        }
-        return distances[cave.target.y()][cave.target.x()][TORCH.ordinal()];
+        throw new IllegalStateException("Target is unreachable");
     }
 
-    private int estimateUpperBound(Coordinate3D start, Coordinate3D goal, int[][] erosionLevelMap) {
+    private void addNeighbourIfAllowed(int[] dist, Utils.MinHeap heap, int cell, int tool, int candidate) {
+        if (isAllowed(regionTypes[cell], tool)) {
+            addNeighbour(dist, heap, cell * TOOLS + tool, candidate);
+        }
+    }
+
+    private static void addNeighbour(int[] dist, Utils.MinHeap heap, int state, int candidate) {
+        if (candidate < dist[state]) {
+            dist[state] = candidate;
+            long value = ((long) candidate << 32) | (state & 0xFFFFFFFFL);
+            heap.push(value);
+        }
+    }
+
+    private int stateOf(int x, int y, int tool) {
+        return (y * width + x) * TOOLS + tool;
+    }
+
+    private int estimateUpperBound(byte[] map, int probeWidth) {
+        int targetX = cave.target().x();
+        int targetY = cave.target().y();
+        int x = 0;
+        int y = 0;
+        int tool = TORCH.ordinal();
         int cost = 0;
-        Coordinate3D current = start;
-        while (current.y() != goal.y()) {
-            Coordinate3D currentFinal = current;
-            Coordinate3D next = getLegalMove(currentFinal, currentFinal.convertTo2D().down(), erosionLevelMap)
-                    .orElseGet(() -> getLegalMove(currentFinal, currentFinal.convertTo2D(), erosionLevelMap).orElseThrow());
-            cost += calculateMoveCost(current, next);
-            current = next;
+
+        while (y != targetY) {
+            if (!isAllowed(map[(y + 1) * probeWidth + x], tool)) {
+                tool = otherTool(map[y * probeWidth + x], tool);
+                cost += SWITCH_COST;
+            }
+            y++;
+            cost += MOVE_COST;
         }
-        while (current.x() != goal.x()) {
-            Coordinate3D currentFinal = current;
-            Coordinate3D next = getLegalMove(currentFinal, currentFinal.convertTo2D().right(), erosionLevelMap)
-                    .orElseGet(() -> getLegalMove(currentFinal, currentFinal.convertTo2D(), erosionLevelMap).orElseThrow());
-            cost += calculateMoveCost(current, next);
-            current = next;
+        while (x != targetX) {
+            if (!isAllowed(map[y * probeWidth + x + 1], tool)) {
+                tool = otherTool(map[y * probeWidth + x], tool);
+                cost += SWITCH_COST;
+            }
+            x++;
+            cost += MOVE_COST;
         }
+        if (tool != TORCH.ordinal()) cost += SWITCH_COST;
         return cost;
     }
 
-    private int calculateMoveCost(Coordinate3D current, Coordinate3D neighbor) {
-        if (current.equals2D(neighbor.convertTo2D())) {
-            return 7;
-        }
-        return neighbor.z() == current.z() ? 1 : 8;
-    }
+    private byte[] buildRegionTypes(int width, int height) {
+        byte[] types = new byte[width * height];
+        int depth = cave.depth();
+        int targetX = cave.target().x();
+        int targetY = cave.target().y();
 
-    private Optional<Coordinate3D> getLegalMove(Coordinate3D current, Coordinate next, int[][] erosionLevelMap) {
-        if (current.equals2D(next)) {
-            return Arrays.stream(Equipment.values())
-                    .filter(e -> e.ordinal() != current.z())
-                    .filter(e -> isAllowed(current.convertTo2D().get(erosionLevelMap), e.ordinal()))
-                    .map(e -> current.z(e.ordinal()))
-                    .findFirst();
-        }
-        return isAllowed(next.get(erosionLevelMap), current.z()) ? Optional.of(new Coordinate3D(next.x(), next.y(), current.z())) : Optional.empty();
-    }
+        int[] previousErosion = new int[width];
+        int[] currentErosion = new int[width];
 
-    private int[][] buildMaps(int depth) {
-        final int size = depth + 1;
-        final int caveDepth = cave.depth;
-        final int targetX = cave.target.x;
-        final int targetY = cave.target.y;
-
-        int[][] regionTypeMap = new int[size][size];
-        int[] previousErosion = new int[size];
-        int[] currentErosion = new int[size];
-
-        for (int y = 0; y < size; y++) {
-            int[] regionTypeRow = regionTypeMap[y];
-            for (int x = 0; x < size; x++) {
+        for (int y = 0; y < height; y++) {
+            int rowOffset = y * width;
+            for (int x = 0; x < width; x++) {
                 int geologicIndex;
-                if (x == 0) {
+                if (x == targetX && y == targetY) {
+                    geologicIndex = 0;
+                } else if (x == 0) {
                     geologicIndex = y * 48271;
                 } else if (y == 0) {
                     geologicIndex = x * 16807;
-                } else if (x == targetX && y == targetY) {
-                    geologicIndex = 0;
                 } else {
                     geologicIndex = currentErosion[x - 1] * previousErosion[x];
                 }
-                int erosionLevel = (geologicIndex + caveDepth) % 20183;
+                int erosionLevel = (geologicIndex + depth) % 20183;
                 currentErosion[x] = erosionLevel;
-                regionTypeRow[x] = erosionLevel % 3;
+                types[rowOffset + x] = (byte) (erosionLevel % REGION_KINDS);
             }
             int[] swap = previousErosion;
             previousErosion = currentErosion;
             currentErosion = swap;
         }
-        return regionTypeMap;
+        return types;
+    }
+
+    private static int forbiddenTool(int regionType) {
+        return (regionType + 2) % REGION_KINDS;
+    }
+
+    private static boolean isAllowed(int regionType, int tool) {
+        return tool != forbiddenTool(regionType);
+    }
+
+    private static int otherTool(int regionType, int tool) {
+        return TOOLS - tool - forbiddenTool(regionType);
     }
 
     public record Coordinate(int x, int y) {
-        public Coordinate up() {
-            return new Coordinate(x, y - 1);
-        }
-
-        public Coordinate down() {
-            return new Coordinate(x, y + 1);
-        }
-
-        public Coordinate left() {
-            return new Coordinate(x - 1, y);
-        }
-
-        public Coordinate right() {
-            return new Coordinate(x + 1, y);
-        }
-
-        public void set(int[][] map, int value) {
-            map[y][x] = value;
-        }
-
-        public boolean notInBounds(int[][] map) {
-            return y < 0 || x < 0 || y >= map.length || x >= map[0].length;
-        }
-
-        public int get(int[][] map) {
-            if (notInBounds(map))
-                return -1;
-            return map[y][x];
-        }
-
-        public int manhattanDistance(Coordinate coordinate) {
-            return Math.abs(x - coordinate.x) + Math.abs(y - coordinate.y);
-        }
-    }
-
-    public record Coordinate3D(int x, int y, int z) {
-
-        public Coordinate convertTo2D() {
-            return new Coordinate(x, y);
-        }
-
-        public int getValue(int[][][] map) {
-            return map[y][x][z];
-        }
-
-        public void setValue(int[][][] map, int value) {
-            map[y][x][z] = value;
-        }
-
-        public Coordinate3D z(int z) {
-            return new Coordinate3D(x, y, z);
-        }
-
-        public boolean equals2D(Coordinate other) {
-            return x == other.x && y == other.y;
-        }
     }
 
     public record Cave(Coordinate target, int depth) {
         public static Cave parse(List<String> value) {
             String[] parts = value.getLast().replace("target: ", "").split(",");
-            return new Cave(new Coordinate(Integer.parseInt(parts[0]), Integer.parseInt(parts[1])), Integer.parseInt(value.getFirst().replace("depth: ", "")));
+            return new Cave(
+                    new Coordinate(Integer.parseInt(parts[0]), Integer.parseInt(parts[1])),
+                    Integer.parseInt(value.getFirst().replace("depth: ", "")));
         }
     }
 
     public enum Equipment {
         TORCH, CLIMBING_GEAR, NEITHER
-    }
-
-    private static boolean isAllowed(int regionType, int equipmentOrdinal) {
-        return switch (regionType) {
-            case 0 -> equipmentOrdinal != NEITHER.ordinal();
-            case 1 -> equipmentOrdinal != TORCH.ordinal();
-            case 2 -> equipmentOrdinal != CLIMBING_GEAR.ordinal();
-            default -> throw new IllegalStateException("Unexpected region type: " + regionType);
-        };
     }
 }
