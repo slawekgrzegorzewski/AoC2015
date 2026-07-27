@@ -240,8 +240,10 @@ public class Input {
         return Day22.Cave.parse(getInputFromFile("/y2018/day22"));
     }
 
-    public static List<String> day23() throws IOException {
-        return getInputFromFile("/y2018/day23");
+    public static List<Day23.Nanobot> day23() throws IOException {
+        return getInputFromFile("/y2018/day23").stream()
+                .map(Day23.Nanobot::parse)
+                .toList();
     }
 
     public static List<String> day24() throws IOException {
