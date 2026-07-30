@@ -6,7 +6,7 @@ import com.google.common.base.Function;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.BiFunction;
-import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 
 public class Day23 {
@@ -26,9 +26,66 @@ public class Day23 {
     }
 
     long part2() {
-        Map<Coordinate, List<Nanobot>> result = new HashMap<>();
-        Map<Cube, List<Nanobot>> cubes = new HashMap<>();
-        int minX = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE, minY = Integer.MAX_VALUE, maxY = Integer.MIN_VALUE, minZ = Integer.MAX_VALUE, maxZ = Integer.MIN_VALUE;
+        Map<Cube, Set<Nanobot>> cubes = new HashMap<>();
+        Cube cube = getMaxCube();
+        cubes.put(cube, nanobotsInRange(cube));
+        while (!cubes.isEmpty()) {
+            long currentSide = cubes.keySet().iterator().next().side();
+            if (currentSide == 0)
+                break;
+            long maxRange = cubes.values().stream().mapToLong(Set::size).max().orElseThrow();
+            if (maxRange == 1000) {
+                Cube cube1 = cube.shrink(currentSide / 10);
+                Set<Nanobot> nanobotsInRange = nanobotsInRange(cube1);
+                if (nanobotsInRange.size() < 1000)
+                    break;
+                cube = cube1;
+                cubes.clear();
+                cubes.put(cube, nanobotsInRange);
+            }
+        }
+        final Map<Cube, Set<Nanobot>> newCubes = new HashMap<>();
+        while (!cubes.isEmpty()) {
+            long currentSide = cubes.keySet().iterator().next().side();
+            if (currentSide == 0)
+                break;
+            long maxRange = cubes.values().stream().mapToLong(Set::size).max().orElseThrow();
+            if (maxRange == 1000) {
+                Cube cube1 = cube.shrink(currentSide / 10);
+                newCubes.computeIfAbsent(cube1, k -> new HashSet<>()).addAll(nanobotsInRange(cube1));
+                if (newCubes.size() == 1 && newCubes.values().stream().mapToLong(Set::size).max().orElseThrow() == 1000) {
+                    cube = cube1;
+                } else {
+                    a(cubes, maxRange, newCubes);
+                }
+            } else {
+                a(cubes, maxRange, newCubes);
+            }
+            cubes.clear();
+            cubes.putAll(newCubes);
+            newCubes.clear();
+        }
+        long maxRange = cubes.values().stream().mapToLong(Set::size).max().orElseThrow();
+
+        return cubes.entrySet().stream()
+                .filter(entry -> entry.getValue().size() == maxRange)
+                .map(Map.Entry::getKey)
+                .mapToLong(c -> c.corner().manhattanDistance(new Coordinate(0, 0, 0)))
+                .min()
+                .orElseThrow();
+    }
+
+    private Set<Nanobot> nanobotsInRange(Cube cube) {
+        Set<Nanobot> nanobotsInRange = new HashSet<>();
+        for (Nanobot nanobot : nanobots) {
+            if (cube.isInRange(nanobot))
+                nanobotsInRange.add(nanobot);
+        }
+        return nanobotsInRange;
+    }
+
+    private Cube getMaxCube() {
+        long minX = Long.MAX_VALUE, maxX = Long.MIN_VALUE, minY = Long.MAX_VALUE, maxY = Long.MIN_VALUE, minZ = Long.MAX_VALUE, maxZ = Long.MIN_VALUE;
         for (Nanobot nanobot : nanobots) {
             if (nanobot.coordinate().x() - nanobot.radius() < minX) minX = nanobot.coordinate().x() - nanobot.radius();
             if (nanobot.coordinate().x() + nanobot.radius() > maxX) maxX = nanobot.coordinate().x() + nanobot.radius();
@@ -37,44 +94,35 @@ public class Day23 {
             if (nanobot.coordinate().z() - nanobot.radius() < minZ) minZ = nanobot.coordinate().z() - nanobot.radius();
             if (nanobot.coordinate().z() + nanobot.radius() > maxZ) maxZ = nanobot.coordinate().z() + nanobot.radius();
         }
-        Cube cube = new Cube(new Coordinate(minX, minY, minZ), Math.max(Math.max(maxX - minX, maxY - minY), maxZ - minZ));
-        for (Nanobot nanobot : nanobots) {
-            if (cube.isInRange(nanobot))
-                cubes.computeIfAbsent(cube, k -> new ArrayList<>()).add(nanobot);
-        }
-
-        final Map<Cube, List<Nanobot>> newCubes = new HashMap<>();
-        while (!cubes.isEmpty()) {
-            int maxRange = cubes.values().stream().mapToInt(List::size).max().orElseThrow();
-            cubes.forEach((cube1, nanobots) -> {
-                if (nanobots.size() < maxRange)
-                    return;
-                if (cube1.side() == 0) result.put(cube1.corner(), nanobots);
-                List<Cube> split = cube1.split();
-                for (Cube cube2 : split) {
-                    for (Nanobot nanobot : nanobots) {
-                        if (cube2.isInRange(nanobot))
-                            newCubes.computeIfAbsent(cube2, k -> new ArrayList<>()).add(nanobot);
-                    }
-                }
-            });
-            cubes.clear();
-            cubes.putAll(newCubes);
-            newCubes.clear();
-        }
-        Map<Coordinate, Integer> result2 = new HashMap<>();
-        result.forEach((c, nanobots) -> result2.put(cube.corner(), nanobots.size()));
-        int maxRange = result2.values().stream().max(Integer::compare).orElseThrow();
-        return result2.entrySet().stream().filter(e -> e.getValue() == maxRange).map(Map.Entry::getKey)
-                .mapToInt(c-> c.manhattanDistance(new Coordinate(0, 0, 0)))
-                .min()
-                .orElseThrow();
+        long side = Long.highestOneBit(Math.max(Math.max(maxX - minX, maxY - minY), maxZ - minZ)) << 1;
+        return new Cube(new Coordinate(minX, minY, minZ), side);
     }
 
-    public record Nanobot(Coordinate coordinate, int radius) {
+    private static void a(Map<Cube, Set<Nanobot>> cubes, long maxRange, Map<Cube, Set<Nanobot>> newCubes) {
+        cubes.forEach((cube1, nanobots) -> {
+            if (nanobots.size() < maxRange || cube1.side() == 0)
+                return;
+            List<Cube> split = cube1.split();
+            for (Cube cube2 : split) {
+                newCubes.computeIfAbsent(cube2, k -> new HashSet<>());
+                for (Nanobot nanobot : nanobots) {
+                    if (cube2.isInRange(nanobot))
+                        newCubes.computeIfAbsent(cube2, k -> new HashSet<>()).add(nanobot);
+                }
+            }
+        });
+        retainOnlyMaxRanges(newCubes);
+    }
+
+    private static void retainOnlyMaxRanges(Map<Cube, Set<Nanobot>> cubes) {
+        int maxNumberOfBotsInRange = cubes.values().stream().mapToInt(Set::size).max().orElseThrow();
+        cubes.entrySet().removeIf(entry -> entry.getValue().size() < maxNumberOfBotsInRange);
+    }
+
+    public record Nanobot(Coordinate coordinate, long radius) {
         public static Nanobot parse(String value) {
             String[] parts = value.split(", ");
-            return new Nanobot(Coordinate.parse(parts[0]), Integer.parseInt(parts[1].replace("r=", "")));
+            return new Nanobot(Coordinate.parse(parts[0]), Long.parseLong(parts[1].replace("r=", "")));
         }
 
         public boolean inRange(Coordinate coordinate) {
@@ -82,45 +130,45 @@ public class Day23 {
         }
     }
 
-    public record Coordinate(int x, int y, int z) {
+    public record Coordinate(long x, long y, long z) {
         public static Coordinate parse(String value) {
             String[] parts = value
                     .replace("pos=<", "")
                     .replace(">", "")
                     .split(",");
-            return new Coordinate(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+            return new Coordinate(Long.parseLong(parts[0]), Long.parseLong(parts[1]), Long.parseLong(parts[2]));
         }
 
-        public int manhattanDistance(Coordinate other) {
+        public long manhattanDistance(Coordinate other) {
             return Math.abs(x - other.x) + Math.abs(y - other.y) + Math.abs(z - other.z);
         }
 
-        Coordinate moveX(int x) {
+        Coordinate moveX(long x) {
             return x(this.x + x);
         }
 
-        Coordinate moveY(int y) {
+        Coordinate moveY(long y) {
             return y(this.y + y);
         }
 
-        Coordinate moveZ(int z) {
+        Coordinate moveZ(long z) {
             return z(this.z + z);
         }
 
-        Coordinate x(int x) {
+        Coordinate x(long x) {
             return new Coordinate(x, y, z);
         }
 
-        Coordinate y(int y) {
+        Coordinate y(long y) {
             return new Coordinate(x, y, z);
         }
 
-        Coordinate z(int z) {
+        Coordinate z(long z) {
             return new Coordinate(x, y, z);
         }
     }
 
-    public record Cube(Coordinate corner, int side) {
+    public record Cube(Coordinate corner, long side) {
         List<Coordinate> corners() {
             Coordinate otherSideCorner = corner.moveZ(side);
             return List.of(
@@ -142,11 +190,11 @@ public class Day23 {
                 return nanobot.inRange(corner);
             }
             List<Coordinate> corners = corners();
-            Map<Coordinate, Integer> cornersDistances = new HashMap<>();
-            Map<Integer, List<Coordinate>> distances = new HashMap<>();
-            int minDistance = Integer.MAX_VALUE;
+            Map<Coordinate, Long> cornersDistances = new HashMap<>();
+            Map<Long, List<Coordinate>> distances = new HashMap<>();
+            long minDistance = Long.MAX_VALUE;
             for (Coordinate coordinate : corners) {
-                int distance = coordinate.manhattanDistance(nanobot.coordinate());
+                long distance = coordinate.manhattanDistance(nanobot.coordinate());
                 if (distance < minDistance) {
                     minDistance = distance;
                 }
@@ -168,19 +216,19 @@ public class Day23 {
                     && coordinate.z() >= corner.z() && coordinate.z() <= corner.z() + side;
         }
 
-        private boolean checkSide(Nanobot nanobot, List<Coordinate> side, Map<Coordinate, Integer> cornersDistances) {
-            Coordinate startPoint = side.stream().min(Comparator.comparing(cornersDistances::get)).orElseThrow();
-            Coordinate endPoint = side.stream().max(Comparator.comparing(cornersDistances::get)).orElseThrow();
-            Function<Coordinate, Integer> firstCoordinateGetter;
-            BiFunction<Coordinate, Integer, Coordinate> firstCoordinateSetter;
-            Function<Coordinate, Integer> secondCoordinateGetter;
-            BiFunction<Coordinate, Integer, Coordinate> secondCoordinateSetter;
-            if (startPoint.x() == endPoint.x()) {
+        private boolean checkSide(Nanobot nanobot, List<Coordinate> side, Map<Coordinate, Long> cornersDistances) {
+            Coordinate startPolong = side.stream().min(Comparator.comparing(cornersDistances::get)).orElseThrow();
+            Coordinate endPolong = side.stream().max(Comparator.comparing(cornersDistances::get)).orElseThrow();
+            Function<Coordinate, Long> firstCoordinateGetter;
+            BiFunction<Coordinate, Long, Coordinate> firstCoordinateSetter;
+            Function<Coordinate, Long> secondCoordinateGetter;
+            BiFunction<Coordinate, Long, Coordinate> secondCoordinateSetter;
+            if (startPolong.x() == endPolong.x()) {
                 firstCoordinateGetter = Coordinate::y;
                 firstCoordinateSetter = Coordinate::y;
                 secondCoordinateGetter = Coordinate::z;
                 secondCoordinateSetter = Coordinate::z;
-            } else if (startPoint.y() == endPoint.y()) {
+            } else if (startPolong.y() == endPolong.y()) {
                 firstCoordinateGetter = Coordinate::x;
                 firstCoordinateSetter = Coordinate::x;
                 secondCoordinateGetter = Coordinate::z;
@@ -191,57 +239,30 @@ public class Day23 {
                 secondCoordinateGetter = Coordinate::y;
                 secondCoordinateSetter = Coordinate::y;
             }
-            int firstCoordinateFrom = firstCoordinateGetter.apply(startPoint);
-            int firstCoordinateTo = firstCoordinateGetter.apply(endPoint);
-            int secondCoordinateFrom = secondCoordinateGetter.apply(startPoint);
-            int secondCoordinateTo = secondCoordinateGetter.apply(endPoint);
+            long firstCoordinateFrom = firstCoordinateGetter.apply(startPolong);
+            long firstCoordinateTo = firstCoordinateGetter.apply(endPolong);
+            long secondCoordinateFrom = secondCoordinateGetter.apply(startPolong);
+            long secondCoordinateTo = secondCoordinateGetter.apply(endPolong);
 
 
             BinarySearch binarySearch = new BinarySearch(
                     Math.min(firstCoordinateFrom, firstCoordinateTo),
                     Math.max(firstCoordinateFrom, firstCoordinateTo),
-                    i -> firstCoordinateSetter.apply(startPoint, i).manhattanDistance(nanobot.coordinate()));
-            int indexOfMinRow = binarySearch.getIndexOfMinValue().orElseThrow();
-            Coordinate withFirstCoordinate = firstCoordinateSetter.apply(startPoint, indexOfMinRow);
+                    i -> firstCoordinateSetter.apply(startPolong, i).manhattanDistance(nanobot.coordinate()));
+            long indexOfMinRow = binarySearch.getIndexOfMinValue().orElseThrow();
+            Coordinate withFirstCoordinate = firstCoordinateSetter.apply(startPolong, indexOfMinRow);
             binarySearch = new BinarySearch(
                     Math.min(secondCoordinateFrom, secondCoordinateTo),
                     Math.max(secondCoordinateFrom, secondCoordinateTo),
                     i -> secondCoordinateSetter.apply(withFirstCoordinate, i).manhattanDistance(nanobot.coordinate()));
-            int indexOfMinColumn = binarySearch.getIndexOfMinValue().orElseThrow();
+            long indexOfMinColumn = binarySearch.getIndexOfMinValue().orElseThrow();
             return nanobot.inRange(secondCoordinateSetter.apply(withFirstCoordinate, indexOfMinColumn));
         }
 
-        private boolean checkRow(Nanobot nanobot,
-                                 int secondCoordinateFrom,
-                                 int secondCoordinateTo,
-                                 Function<Integer, Integer> secondCoordinateMove,
-                                 BiFunction<Coordinate, Integer, Coordinate> secondCoordinateSetter,
-                                 Coordinate rowFirstPoint,
-                                 int rowMinDistance) {
-            if (secondCoordinateFrom > secondCoordinateTo) {
-                int cache = secondCoordinateFrom;
-                secondCoordinateFrom = secondCoordinateTo;
-                secondCoordinateTo = cache;
-            }
-            while (secondCoordinateFrom + 1 < secondCoordinateTo) {
-                int newCoordinate = (secondCoordinateFrom + secondCoordinateTo) / 2;
-                Coordinate coordinate = secondCoordinateSetter.apply(rowFirstPoint, newCoordinate);
-                int distance = coordinate.manhattanDistance(nanobot.coordinate());
-                if (distance <= nanobot.radius)
-                    return true;
-                if (distance > rowMinDistance) {
-                    secondCoordinateTo = newCoordinate;
-                } else {
-                    secondCoordinateFrom = newCoordinate;
-                }
-            }
-            return false;
-        }
-
         private static List<List<Coordinate>> findSidesToCheck(
-                Map<Coordinate, Integer> cornersDistances,
-                Map<Integer, List<Coordinate>> distances,
-                int minDistance) {
+                Map<Coordinate, Long> cornersDistances,
+                Map<Long, List<Coordinate>> distances,
+                long minDistance) {
             List<List<Coordinate>> sidesToCheck = new ArrayList<>();
             Set<Coordinate> corners = cornersDistances.keySet();
             for (Coordinate corner : distances.get(minDistance)) {
@@ -257,13 +278,13 @@ public class Day23 {
                         .filter(c -> c.x != corner.x && c.y != corner.y && c.z == corner.z)
                         .findAny()
                         .orElseThrow();
-                Coordinate minOppositeDistance = Stream.of(oppositeX, oppositeY, oppositeZ).min(Comparator.comparingInt(cornersDistances::get)).orElseThrow();
+                Coordinate minOppositeDistance = Stream.of(oppositeX, oppositeY, oppositeZ).min(Comparator.comparingLong(cornersDistances::get)).orElseThrow();
                 for (Coordinate opposite : distances.get(cornersDistances.get(minOppositeDistance))) {
                     if (Stream.of(oppositeX, oppositeY, oppositeZ).noneMatch(opposite::equals)) continue;
                     List<Coordinate> side = new ArrayList<>();
                     side.add(corner);
                     side.add(opposite);
-                    side.sort(Comparator.<Coordinate, Integer>comparing(Coordinate::x).thenComparing(c -> c.y()).thenComparing(c -> c.z()));
+                    side.sort(Comparator.<Coordinate, Long>comparing(Coordinate::x).thenComparing(c -> c.y()).thenComparing(c -> c.z()));
                     if (!sidesToCheck.contains(side))
                         sidesToCheck.add(side);
                 }
@@ -272,44 +293,46 @@ public class Day23 {
         }
 
         public List<Cube> split() {
-            int splitPoint = side() / 2;
+            long newSide = side() / 2;
+            long splitPolong = newSide + 1;
             return List.of(
-                    new Cube(corner(), splitPoint),
-                    new Cube(corner().moveX(splitPoint), splitPoint),
-                    new Cube(corner().moveY(splitPoint), splitPoint),
-                    new Cube(corner().moveZ(splitPoint), splitPoint),
-                    new Cube(corner().moveX(splitPoint).moveY(splitPoint), splitPoint),
-                    new Cube(corner().moveX(splitPoint).moveZ(splitPoint), splitPoint),
-                    new Cube(corner().moveY(splitPoint).moveZ(splitPoint), splitPoint),
-                    new Cube(corner().moveX(splitPoint).moveY(splitPoint).moveZ(splitPoint), splitPoint)
+                    new Cube(corner(), newSide),
+                    new Cube(corner().moveX(splitPolong), newSide),
+                    new Cube(corner().moveY(splitPolong), newSide),
+                    new Cube(corner().moveZ(splitPolong), newSide),
+                    new Cube(corner().moveX(splitPolong).moveY(splitPolong), newSide),
+                    new Cube(corner().moveX(splitPolong).moveZ(splitPolong), newSide),
+                    new Cube(corner().moveY(splitPolong).moveZ(splitPolong), newSide),
+                    new Cube(corner().moveX(splitPolong).moveY(splitPolong).moveZ(splitPolong), newSide)
             );
+        }
+
+        public Cube shrink(long size) {
+            return new Cube(corner().moveX(size).moveY(size).moveZ(size), side() - size);
         }
     }
 
     public static final class BinarySearch {
-        private final int fromIndexInclusive;
-        private final int toIndexInclusive;
-        private final ToIntFunction<Integer> indexValueGetter;
+        private final long fromIndexInclusive;
+        private final long toIndexInclusive;
+        private final ToLongFunction<Long> indexValueGetter;
 
-        public BinarySearch(int fromIndexInclusive, int toIndexInclusive, ToIntFunction<Integer> indexValueGetter) {
+        public BinarySearch(long fromIndexInclusive, long toIndexInclusive, ToLongFunction<Long> indexValueGetter) {
             this.fromIndexInclusive = fromIndexInclusive;
             this.toIndexInclusive = toIndexInclusive;
             this.indexValueGetter = indexValueGetter;
         }
 
-        public OptionalInt getIndexOfMinValue() {
-            int fromIndex = fromIndexInclusive;
-            int toIndex = toIndexInclusive;
-            int startValue = indexValueGetter.applyAsInt(fromIndex);
-            int endValue = indexValueGetter.applyAsInt(toIndexInclusive);
+        public OptionalLong getIndexOfMinValue() {
+            long fromIndex = fromIndexInclusive;
+            long toIndex = toIndexInclusive;
             boolean indexChanged = true;
             while (indexChanged) {
-                int previousFromIndex = fromIndex;
-                int previousToIndex = toIndex;
-                indexChanged = false;
-                int middleIndex = fromIndex + (toIndex - fromIndex) / 2;
-                int middleValue = indexValueGetter.applyAsInt(middleIndex);
-                int middleValueNext = indexValueGetter.applyAsInt(middleIndex + 1);
+                long previousFromIndex = fromIndex;
+                long previousToIndex = toIndex;
+                long middleIndex = fromIndex + (toIndex - fromIndex) / 2;
+                long middleValue = indexValueGetter.applyAsLong(middleIndex);
+                long middleValueNext = indexValueGetter.applyAsLong(middleIndex + 1);
                 if (middleValueNext > middleValue) {
                     toIndex = middleIndex;
                 } else if (middleValueNext < middleValue) {
@@ -317,16 +340,16 @@ public class Day23 {
                 }
                 indexChanged = previousFromIndex != fromIndex || previousToIndex != toIndex;
             }
-            int min = Integer.MAX_VALUE;
-            Integer minIndex = null;
-            for (int i = fromIndex; i <= toIndex; i++) {
-                int value = indexValueGetter.applyAsInt(i);
+            long min = Long.MAX_VALUE;
+            Long minIndex = null;
+            for (long i = fromIndex; i <= toIndex; i++) {
+                long value = indexValueGetter.applyAsLong(i);
                 if (value < min) {
                     min = value;
                     minIndex = i;
                 }
             }
-            return minIndex == null ? OptionalInt.empty() : OptionalInt.of(minIndex);
+            return minIndex == null ? OptionalLong.empty() : OptionalLong.of(minIndex);
         }
     }
 }
