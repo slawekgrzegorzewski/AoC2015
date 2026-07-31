@@ -3,6 +3,7 @@ package com.adventofcode.y2018.input;
 import com.adventofcode.Utils;
 import com.adventofcode.y2018.*;
 import com.google.common.base.Splitter;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.util.*;
@@ -246,11 +247,38 @@ public class Input {
                 .toList();
     }
 
-    public static List<String> day24() throws IOException {
-        return getInputFromFile("/y2018/day24");
+    public static Day24.ImmuneSystem day24() throws IOException {
+        List<String> lines = getInputFromFile("/y2018/day24");
+        return day24ParseLines(lines);
     }
 
-    public static List<String> day25() throws IOException {
-        return getInputFromFile("/y2018/day25");
+    public static Day24.@NonNull ImmuneSystem day24ParseLines(List<String> lines) {
+        Set<Day24.Group> immuneSystem = new HashSet<>();
+        Set<Day24.Group> infection = new HashSet<>();
+        Set<Day24.Group> target = null;
+        String descriptionPrefix = "";
+        int index = 0;
+        for (String line : lines) {
+            if (line.startsWith("Immune System:")) {
+                target = immuneSystem;
+                index = -1;
+                descriptionPrefix = "Immune System ";
+            } else if (line.startsWith("Infection:")) {
+                target = infection;
+                descriptionPrefix = "Infection ";
+                index = -1;
+            } else if (!line.isBlank()) {
+                Objects.requireNonNull(target).add(Day24.Group.parse(descriptionPrefix + (index + 1), line));
+            }
+            index++;
+        }
+        return new Day24.ImmuneSystem(immuneSystem, infection);
+    }
+
+    public static List<Day25.Point> day25() throws IOException {
+        return getInputFromFile("/y2018/day25")
+                .stream()
+                .map(Day25.Point::parse)
+                .toList();
     }
 }
