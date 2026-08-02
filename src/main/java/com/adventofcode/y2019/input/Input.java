@@ -2,13 +2,18 @@ package com.adventofcode.y2019.input;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.adventofcode.Utils.getInputFromFile;
 
 public class Input {
 
-    public static List<String> day1() throws IOException {
-        return getInputFromFile("/y2019/day1");
+    public static List<Long> day1() throws IOException {
+        return getInputFromFile("/y2019/day1")
+                .stream()
+                .mapToLong(Long::parseLong)
+                .boxed()
+                .collect(Collectors.toList());
     }
 
     public static List<String> day2() throws IOException {
