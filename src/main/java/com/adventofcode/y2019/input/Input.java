@@ -1,6 +1,7 @@
 package com.adventofcode.y2019.input;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,8 +17,12 @@ public class Input {
                 .collect(Collectors.toList());
     }
 
-    public static List<String> day2() throws IOException {
-        return getInputFromFile("/y2019/day2");
+    public static List<Integer> day2() throws IOException {
+        return Arrays.stream(getInputFromFile("/y2019/day2")
+                        .getFirst()
+                        .split(","))
+                .map(Integer::parseInt)
+                .collect(Collectors.toList());
     }
 
     public static List<String> day3() throws IOException {
