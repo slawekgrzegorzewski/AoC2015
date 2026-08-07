@@ -41,8 +41,12 @@ public class Input {
                 .toArray();
     }
 
-    public static List<String> day5() throws IOException {
-        return getInputFromFile("/y2019/day5");
+    public static List<Integer> day5() throws IOException {
+        return Arrays.stream(getInputFromFile("/y2019/day5")
+                        .getFirst()
+                        .split(","))
+                .map(Integer::parseInt)
+                .collect(Collectors.toList());
     }
 
     public static List<String> day6() throws IOException {

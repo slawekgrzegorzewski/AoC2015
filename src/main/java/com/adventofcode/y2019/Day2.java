@@ -1,6 +1,7 @@
 package com.adventofcode.y2019;
 
 import com.adventofcode.y2019.input.Input;
+import com.adventofcode.y2019.intcode.IntcodeComputer;
 
 import java.io.IOException;
 import java.util.List;
@@ -36,19 +37,6 @@ public class Day2 {
         }
         program[1] = input1;
         program[2] = input2;
-        int position = 0;
-        while (program[position] != 99) {
-            switch (program[position]) {
-                case 1:
-                    program[program[position + 3]] = program[program[position + 1]] + program[program[position + 2]];
-                    position += 4;
-                    break;
-                case 2:
-                    program[program[position + 3]] = program[program[position + 1]] * program[program[position + 2]];
-                    position += 4;
-                    break;
-            }
-        }
-        return program[0];
+        return new IntcodeComputer().execute(program, null).memory()[0];
     }
 }
