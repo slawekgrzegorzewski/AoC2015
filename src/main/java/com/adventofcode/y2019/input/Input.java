@@ -1,8 +1,7 @@
 package com.adventofcode.y2019.input;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.adventofcode.Utils.getInputFromFile;
@@ -49,8 +48,13 @@ public class Input {
                 .collect(Collectors.toList());
     }
 
-    public static List<String> day6() throws IOException {
-        return getInputFromFile("/y2019/day6");
+    public static Map<String, List<String>> day6() throws IOException {
+        Map<String, List<String>> orbits = new HashMap<>();
+        for (String line : getInputFromFile("/y2019/day6")) {
+            String[] split = line.split("\\)");
+            orbits.computeIfAbsent(split[0], _ -> new ArrayList<>()).add(split[1]);
+        }
+        return orbits;
     }
 
     public static List<String> day7() throws IOException {
