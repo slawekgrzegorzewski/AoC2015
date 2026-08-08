@@ -8,7 +8,7 @@ public class AddCommand extends Command {
         int secondParameter = getValue(memory, instructionPointer, 2);
         int resultAddress = memory[instructionPointer + 3];
         memory[resultAddress] = firstParameter + secondParameter;
-        return new CommandResult(4, null);
+        return new CommandResult(4);
     }
 
     @Override

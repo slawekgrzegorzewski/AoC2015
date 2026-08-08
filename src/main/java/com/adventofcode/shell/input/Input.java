@@ -3,7 +3,7 @@ package com.adventofcode.shell.input;
 import java.io.IOException;
 import java.util.List;
 
-import static com.adventofcode.Utils.getInputFromFile;
+import static com.adventofcode.utils.Utils.getInputFromFile;
 
 public class Input {
 

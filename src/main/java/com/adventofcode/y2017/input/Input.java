@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.adventofcode.Utils.getInputFromFile;
+import static com.adventofcode.utils.Utils.getInputFromFile;
 
 public class Input {
 

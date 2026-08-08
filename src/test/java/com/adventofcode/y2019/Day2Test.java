@@ -17,12 +17,12 @@ class Day2Test {
     }
 
     @Test
-    void testPart1() {
+    void testPart1() throws InterruptedException {
         assertEquals(3716293L, day2.part1());
     }
 
     @Test
-    void testPart2() {
+    void testPart2() throws InterruptedException {
         assertEquals(6429L, day2.part2());
     }
 }

@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.adventofcode.Utils.getInputFromFile;
+import static com.adventofcode.utils.Utils.getInputFromFile;
 
 public class Input {
 

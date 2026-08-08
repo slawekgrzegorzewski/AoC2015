@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static com.adventofcode.Utils.getInputFromFile;
+import static com.adventofcode.utils.Utils.getInputFromFile;
 
 public class Input {
 
@@ -57,8 +57,12 @@ public class Input {
         return orbits;
     }
 
-    public static List<String> day7() throws IOException {
-        return getInputFromFile("/y2019/day7");
+    public static List<Integer> day7() throws IOException {
+        return Arrays.stream(getInputFromFile("/y2019/day7")
+                        .getFirst()
+                        .split(","))
+                .map(Integer::parseInt)
+                .collect(Collectors.toList());
     }
 
     public static List<String> day8() throws IOException {

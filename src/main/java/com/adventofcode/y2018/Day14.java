@@ -1,6 +1,6 @@
 package com.adventofcode.y2018;
 
-import com.adventofcode.Utils;
+import com.adventofcode.utils.Utils;
 import com.adventofcode.y2018.input.Input;
 
 import java.io.IOException;

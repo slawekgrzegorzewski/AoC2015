@@ -8,7 +8,7 @@ public class LessThanCommand extends Command {
         int secondParameter = getValue(memory, instructionPointer, 2);
         int resultAddress = memory[instructionPointer + 3];
         memory[resultAddress] = firstParameter < secondParameter ? 1 : 0;
-        return new CommandResult(4, null);
+        return new CommandResult(4);
     }
 
     @Override

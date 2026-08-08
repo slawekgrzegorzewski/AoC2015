@@ -1,4 +1,4 @@
-package com.adventofcode;
+package com.adventofcode.utils;
 
 import com.adventofcode.y2015.input.Input;
 
@@ -193,6 +193,47 @@ public class Utils {
             long tmp = data[a];
             data[a] = data[b];
             data[b] = tmp;
+        }
+    }
+
+    public static class Permutations {
+
+        public static List<int[]> generate(int[] numbers) {
+            List<int[]> result = new ArrayList<>();
+            generate(numbers, 0, result);
+            return result;
+        }
+
+        private static void generate(int[] numbers, int index, List<int[]> result) {
+            if (index == numbers.length) {
+                result.add(numbers.clone());
+                return;
+            }
+
+            for (int i = index; i < numbers.length; i++) {
+                swap(numbers, index, i);
+                generate(numbers, index + 1, result);
+                swap(numbers, index, i);
+            }
+        }
+
+        public static void iterate(int[] numbers, int index, Consumer<int[]> consumer) {
+            if (index == numbers.length) {
+                consumer.accept(numbers);
+                return;
+            }
+
+            for (int i = index; i < numbers.length; i++) {
+                swap(numbers, index, i);
+                iterate(numbers, index + 1, consumer);
+                swap(numbers, index, i);
+            }
+        }
+
+        private static void swap(int[] numbers, int i, int j) {
+            int temp = numbers[i];
+            numbers[i] = numbers[j];
+            numbers[j] = temp;
         }
     }
 }

@@ -1,6 +1,6 @@
 package com.adventofcode.y2018.input;
 
-import com.adventofcode.Utils;
+import com.adventofcode.utils.Utils;
 import com.adventofcode.y2018.*;
 import com.google.common.base.Splitter;
 import org.jspecify.annotations.NonNull;
@@ -10,8 +10,8 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.adventofcode.Utils.BooleanArrayCollector.convertToAnIndex;
-import static com.adventofcode.Utils.getInputFromFile;
+import static com.adventofcode.utils.Utils.BooleanArrayCollector.convertToAnIndex;
+import static com.adventofcode.utils.Utils.getInputFromFile;
 
 public class Input {
 
