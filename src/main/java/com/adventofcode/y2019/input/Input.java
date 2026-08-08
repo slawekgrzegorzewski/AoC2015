@@ -65,8 +65,10 @@ public class Input {
                 .collect(Collectors.toList());
     }
 
-    public static List<String> day8() throws IOException {
-        return getInputFromFile("/y2019/day8");
+    public static char[] day8() throws IOException {
+        return getInputFromFile("/y2019/day8")
+                .getFirst()
+                .toCharArray();
     }
 
     public static List<String> day9() throws IOException {

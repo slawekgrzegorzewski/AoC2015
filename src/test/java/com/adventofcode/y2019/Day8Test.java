@@ -1,7 +1,6 @@
 package com.adventofcode.y2019;
 
 
-import com.adventofcode.y2019.Day8;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -20,11 +19,11 @@ class Day8Test {
 
     @Test
     void testPart1() {
-        assertEquals(0L, day8.part1());
+        assertEquals(1620L, day8.part1());
     }
 
     @Test
     void testPart2() {
-        assertEquals(0L, day8.part2());
+        assertEquals("BCYEF", day8.part2());
     }
 }
