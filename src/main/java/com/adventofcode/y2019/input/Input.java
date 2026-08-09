@@ -1,5 +1,7 @@
 package com.adventofcode.y2019.input;
 
+import org.jspecify.annotations.NonNull;
+
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -16,12 +18,8 @@ public class Input {
                 .collect(Collectors.toList());
     }
 
-    public static List<Integer> day2() throws IOException {
-        return Arrays.stream(getInputFromFile("/y2019/day2")
-                        .getFirst()
-                        .split(","))
-                .map(Integer::parseInt)
-                .collect(Collectors.toList());
+    public static List<Long> day2() throws IOException {
+        return parseProgram("/y2019/day2");
     }
 
     public static List<List<String>> day3() throws IOException {
@@ -40,12 +38,8 @@ public class Input {
                 .toArray();
     }
 
-    public static List<Integer> day5() throws IOException {
-        return Arrays.stream(getInputFromFile("/y2019/day5")
-                        .getFirst()
-                        .split(","))
-                .map(Integer::parseInt)
-                .collect(Collectors.toList());
+    public static List<Long> day5() throws IOException {
+        return parseProgram("/y2019/day5");
     }
 
     public static Map<String, List<String>> day6() throws IOException {
@@ -57,12 +51,8 @@ public class Input {
         return orbits;
     }
 
-    public static List<Integer> day7() throws IOException {
-        return Arrays.stream(getInputFromFile("/y2019/day7")
-                        .getFirst()
-                        .split(","))
-                .map(Integer::parseInt)
-                .collect(Collectors.toList());
+    public static List<Long> day7() throws IOException {
+        return parseProgram("/y2019/day7");
     }
 
     public static char[] day8() throws IOException {
@@ -71,8 +61,8 @@ public class Input {
                 .toCharArray();
     }
 
-    public static List<String> day9() throws IOException {
-        return getInputFromFile("/y2019/day9");
+    public static List<Long> day9() throws IOException {
+        return parseProgram("/y2019/day9");
     }
 
     public static List<String> day10() throws IOException {
@@ -138,4 +128,13 @@ public class Input {
     public static List<String> day25() throws IOException {
         return getInputFromFile("/y2019/day25");
     }
+
+    private static @NonNull List<Long> parseProgram(String path) throws IOException {
+        return Arrays.stream(getInputFromFile(path)
+                        .getFirst()
+                        .split(","))
+                .map(Long::parseLong)
+                .collect(Collectors.toList());
+    }
+
 }

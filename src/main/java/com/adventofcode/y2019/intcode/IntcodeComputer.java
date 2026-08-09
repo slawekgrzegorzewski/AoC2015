@@ -1,20 +1,25 @@
 package com.adventofcode.y2019.intcode;
 
-import com.adventofcode.y2019.intcode.commands.Command;
-import com.adventofcode.y2019.intcode.commands.CommandFactory;
-import com.adventofcode.y2019.intcode.commands.CommandInput;
-import com.adventofcode.y2019.intcode.commands.CommandResult;
+import com.adventofcode.y2019.intcode.commands.*;
 
 import java.util.concurrent.BlockingQueue;
 
 public class IntcodeComputer {
 
-    public ProgramResult execute(int[] memory, BlockingQueue<Integer> input, BlockingQueue<Integer> output) throws InterruptedException {
-        int instructionPointer = 0;
+    private final boolean debug;
+
+    public IntcodeComputer(boolean debug) {
+        this.debug = debug;
+    }
+
+    public ProgramResult execute(Memory<Long> memory, BlockingQueue<Long> input, BlockingQueue<Long> output) throws InterruptedException {
+        long instructionPointer = 0;
+        long relativeBase = 0;
         while (true) {
-            Command command = CommandFactory.getCommand(memory[instructionPointer]);
-            CommandResult commandResult = command.execute(new CommandInput(memory, instructionPointer, input, output));
+            Command command = CommandFactory.getCommand(Math.toIntExact(memory.get(instructionPointer)));
+            CommandResult commandResult = command.execute(new CommandInput(memory, instructionPointer, relativeBase, input, output, debug));
             instructionPointer += commandResult.pointerMove();
+            relativeBase = commandResult.relativeBase();
             if (command.isEnd()) {
                 break;
             }

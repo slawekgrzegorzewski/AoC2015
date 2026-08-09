@@ -8,12 +8,12 @@ import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
-public class BlockingDequeWithMemory implements BlockingDeque<Integer> {
-    private final BlockingDeque<Integer> deque;
+public class BlockingDequeWithMemory implements BlockingDeque<Long> {
+    private final BlockingDeque<Long> deque;
 
-    private int lastAddedElement;
+    private long lastAddedElement;
 
-    public int getLastAddedElement() {
+    public long getLastAddedElement() {
         return lastAddedElement;
     }
 
@@ -22,110 +22,110 @@ public class BlockingDequeWithMemory implements BlockingDeque<Integer> {
     }
 
     @Override
-    public void addFirst(@NonNull Integer element) {
+    public void addFirst(@NonNull Long element) {
         deque.addFirst(element);
         lastAddedElement = element;
     }
 
     @Override
-    public void addLast(@NonNull Integer element) {
+    public void addLast(@NonNull Long element) {
         deque.addLast(element);
         lastAddedElement = element;
     }
 
     @Override
-    public boolean offerFirst(@NonNull Integer element) {
+    public boolean offerFirst(@NonNull Long element) {
         lastAddedElement = element;
         return deque.offerFirst(element);
     }
 
     @Override
-    public boolean offerLast(@NonNull Integer element) {
+    public boolean offerLast(@NonNull Long element) {
         lastAddedElement = element;
         return deque.offerLast(element);
     }
 
     @Override
-    public void putFirst(@NonNull Integer element) throws InterruptedException {
+    public void putFirst(@NonNull Long element) throws InterruptedException {
         lastAddedElement = element;
         deque.putFirst(element);
     }
 
     @Override
-    public void putLast(@NonNull Integer element) throws InterruptedException {
+    public void putLast(@NonNull Long element) throws InterruptedException {
         lastAddedElement = element;
         deque.putLast(element);
     }
 
     @Override
-    public boolean offerFirst(@NonNull Integer element, long timeout, TimeUnit unit) throws InterruptedException {
+    public boolean offerFirst(@NonNull Long element, long timeout, TimeUnit unit) throws InterruptedException {
         lastAddedElement = element;
         return deque.offerFirst(element, timeout, unit);
     }
 
     @Override
-    public boolean offerLast(@NonNull Integer element, long timeout, TimeUnit unit) throws InterruptedException {
+    public boolean offerLast(@NonNull Long element, long timeout, TimeUnit unit) throws InterruptedException {
         lastAddedElement = element;
         return deque.offerLast(element, timeout, unit);
     }
 
     @Override
-    public @NonNull Integer takeFirst() throws InterruptedException {
+    public @NonNull Long takeFirst() throws InterruptedException {
         return deque.takeFirst();
     }
 
     @Override
-    public @NonNull Integer takeLast() throws InterruptedException {
+    public @NonNull Long takeLast() throws InterruptedException {
         return deque.takeLast();
     }
 
     @Override
-    public Integer pollFirst(long timeout, TimeUnit unit) throws InterruptedException {
+    public Long pollFirst(long timeout, TimeUnit unit) throws InterruptedException {
         return deque.pollFirst(timeout, unit);
     }
 
     @Override
-    public Integer pollLast(long timeout, TimeUnit unit) throws InterruptedException {
+    public Long pollLast(long timeout, TimeUnit unit) throws InterruptedException {
         return deque.pollLast(timeout, unit);
     }
 
     @Override
-    public Integer removeFirst() {
+    public Long removeFirst() {
         return deque.removeFirst();
     }
 
     @Override
-    public Integer removeLast() {
+    public Long removeLast() {
         return deque.removeLast();
     }
 
     @Override
-    public Integer pollFirst() {
+    public Long pollFirst() {
         return deque.pollFirst();
     }
 
     @Override
-    public Integer pollLast() {
+    public Long pollLast() {
         return deque.pollLast();
     }
 
     @Override
-    public Integer getFirst() {
+    public Long getFirst() {
         return deque.getFirst();
     }
 
     @Override
-    public Integer getLast() {
+    public Long getLast() {
         return deque.getLast();
     }
 
     @Override
-    public Integer peekFirst() {
+    public Long peekFirst() {
         return deque.peekFirst();
     }
 
     @Override
-    public Integer peekLast() {
+    public Long peekLast() {
         return deque.peekLast();
     }
 
@@ -140,56 +140,56 @@ public class BlockingDequeWithMemory implements BlockingDeque<Integer> {
     }
 
     @Override
-    public boolean add(@NonNull Integer element) {
+    public boolean add(@NonNull Long element) {
         lastAddedElement = element;
         return deque.add(element);
     }
 
     @Override
-    public boolean offer(@NonNull Integer element) {
+    public boolean offer(@NonNull Long element) {
         lastAddedElement = element;
         return deque.offer(element);
     }
 
     @Override
-    public void put(@NonNull Integer element) throws InterruptedException {
+    public void put(@NonNull Long element) throws InterruptedException {
         lastAddedElement = element;
         deque.put(element);
     }
 
     @Override
-    public boolean offer(@NonNull Integer element, long timeout, @NonNull TimeUnit unit) throws InterruptedException {
+    public boolean offer(@NonNull Long element, long timeout, @NonNull TimeUnit unit) throws InterruptedException {
         lastAddedElement = element;
         return deque.offer(element, timeout, unit);
     }
 
     @Override
-    public @NonNull Integer remove() {
+    public @NonNull Long remove() {
         return deque.remove();
     }
 
     @Override
-    public Integer poll() {
+    public Long poll() {
         return deque.poll();
     }
 
     @Override
-    public @NonNull Integer take() throws InterruptedException {
+    public @NonNull Long take() throws InterruptedException {
         return deque.take();
     }
 
     @Override
-    public Integer poll(long timeout, TimeUnit unit) throws InterruptedException {
+    public Long poll(long timeout, TimeUnit unit) throws InterruptedException {
         return deque.poll(timeout, unit);
     }
 
     @Override
-    public @NonNull Integer element() {
+    public @NonNull Long element() {
         return deque.element();
     }
 
     @Override
-    public Integer peek() {
+    public Long peek() {
         return deque.peek();
     }
 
@@ -199,23 +199,23 @@ public class BlockingDequeWithMemory implements BlockingDeque<Integer> {
     }
 
     @Override
-    public int drainTo(@NonNull Collection<? super Integer> collection) {
+    public int drainTo(@NonNull Collection<? super Long> collection) {
         return deque.drainTo(collection);
     }
 
     @Override
-    public int drainTo(@NonNull Collection<? super Integer> collection, int maxElements) {
+    public int drainTo(@NonNull Collection<? super Long> collection, int maxElements) {
         return deque.drainTo(collection, maxElements);
     }
 
     @Override
-    public void push(@NonNull Integer element) {
+    public void push(@NonNull Long element) {
         lastAddedElement = element;
         deque.push(element);
     }
 
     @Override
-    public Integer pop() {
+    public Long pop() {
         return deque.pop();
     }
 
@@ -240,12 +240,12 @@ public class BlockingDequeWithMemory implements BlockingDeque<Integer> {
     }
 
     @Override
-    public @NonNull Iterator<Integer> iterator() {
+    public @NonNull Iterator<Long> iterator() {
         return deque.iterator();
     }
 
     @Override
-    public @NonNull Iterator<Integer> descendingIterator() {
+    public @NonNull Iterator<Long> descendingIterator() {
         return deque.descendingIterator();
     }
 
@@ -265,7 +265,7 @@ public class BlockingDequeWithMemory implements BlockingDeque<Integer> {
     }
 
     @Override
-    public boolean addAll(@NonNull Collection<? extends Integer> collection) {
+    public boolean addAll(@NonNull Collection<? extends Long> collection) {
         throw new UnsupportedOperationException("addAll");
     }
 

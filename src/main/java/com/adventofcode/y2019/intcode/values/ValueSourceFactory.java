@@ -1,24 +1,27 @@
 package com.adventofcode.y2019.intcode.values;
 
-public class ValueSourceFactory {
-    private final int[] memory;
-    private final int position;
+import com.adventofcode.y2019.intcode.commands.Memory;
 
-    public ValueSourceFactory(int[] memory, int position) {
+public class ValueSourceFactory {
+    private final Memory<Long> memory;
+    private final long position;
+
+    public ValueSourceFactory(Memory<Long> memory, long position) {
         this.memory = memory;
         this.position = position;
     }
 
-    public ValueSource getValueSource(int offset) {
-        int mode = memory[position] / 100;
+    public ValueSource getValueSource(long offset, long relativeBase) {
+        long mode = memory.get(position) / 100;
         for (int i = 0; i < offset - 1; i++) {
             mode /= 10;
         }
         mode %= 10;
-        if (mode == 0) {
-            return new PositionModeValueSource(memory, position + offset);
-        } else {
-            return new ImmediateModeValueSource(memory, position + offset);
-        }
+        return switch (Math.toIntExact(mode)) {
+            case 0 -> new PositionModeValueSource(memory, position + offset);
+            case 1 -> new ImmediateModeValueSource(memory, position + offset);
+            case 2 -> new RelativeBaseModeValueSource(memory, position + offset, relativeBase);
+            default -> throw new IllegalArgumentException("Invalid mode: " + mode);
+        };
     }
 }

@@ -2,13 +2,23 @@ package com.adventofcode.y2019.intcode.commands;
 
 public class AddCommand extends Command {
     public CommandResult execute(CommandInput commandInput) {
-        int[] memory = commandInput.memory();
-        int instructionPointer = commandInput.instructionPointer();
-        int firstParameter = getValue(memory, instructionPointer, 1);
-        int secondParameter = getValue(memory, instructionPointer, 2);
-        int resultAddress = memory[instructionPointer + 3];
-        memory[resultAddress] = firstParameter + secondParameter;
-        return new CommandResult(4);
+        Memory<Long> memory = commandInput.memory();
+        long instructionPointer = commandInput.instructionPointer();
+        long firstParameter = getValue(memory, instructionPointer, 1, commandInput.relativeBase());
+        long secondParameter = getValue(memory, instructionPointer, 2, commandInput.relativeBase());
+        long resultAddress = getValueForJump(commandInput.memory(), instructionPointer , 3, commandInput.relativeBase());
+        if (commandInput.debug()) {
+            System.out.println("At " + commandInput.instructionPointer() + ": AddCommand: " + commandInput.memory().get(commandInput.instructionPointer()));
+            System.out.println("\tRelative base: " + commandInput.relativeBase());
+            System.out.println("\tFirst parameter: " + memory.get(instructionPointer + 1));
+            System.out.println("\tFirst value: " + firstParameter);
+            System.out.println("\tSecond parameter: " + memory.get(instructionPointer + 2));
+            System.out.println("\tSecond value: " + secondParameter);
+            System.out.println("\tResult address: " + resultAddress);
+            System.out.println("\tResult: " + (firstParameter + secondParameter));
+        }
+        memory.set(resultAddress, firstParameter + secondParameter);
+        return new CommandResult(4, commandInput.relativeBase());
     }
 
     @Override

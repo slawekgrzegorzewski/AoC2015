@@ -1,15 +1,17 @@
 package com.adventofcode.y2019.intcode.values;
 
-public class ImmediateModeValueSource extends ValueSource {
-    private final int[] memory;
-    private final int position;
+import com.adventofcode.y2019.intcode.commands.Memory;
 
-    public ImmediateModeValueSource(int[] memory, int position) {
+public class ImmediateModeValueSource extends ValueSource {
+    private final Memory<Long> memory;
+    private final long position;
+
+    public ImmediateModeValueSource(Memory<Long> memory, long position) {
         this.memory = memory;
         this.position = position;
     }
 
-    public int getValue() {
-        return memory[position];
+    public long getValue() {
+        return memory.get(position);
     }
 }

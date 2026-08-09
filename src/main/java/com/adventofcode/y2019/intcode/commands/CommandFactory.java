@@ -11,6 +11,7 @@ public class CommandFactory {
             case 6 -> new JumpIfFalseCommand();
             case 7 -> new LessThanCommand();
             case 8 -> new EqualsCommand();
+            case 9 -> new AdjustRelativeBaseCommand();
             case 99 -> new EndCommand();
             default -> throw new IllegalArgumentException("Invalid opcode: " + opcode);
         };

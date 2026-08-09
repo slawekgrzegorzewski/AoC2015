@@ -4,6 +4,7 @@ import com.adventofcode.utils.BlockingDequeWithMemory;
 import com.adventofcode.utils.Utils;
 import com.adventofcode.y2019.input.Input;
 import com.adventofcode.y2019.intcode.IntcodeComputer;
+import com.adventofcode.y2019.intcode.commands.Memory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -12,25 +13,24 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class Day7 {
-    private final List<Integer> amplifierProgram;
+    private final List<Long> amplifierProgram;
 
     public Day7() throws IOException {
         this.amplifierProgram = Input.day7();
     }
 
     long part1() {
-        AtomicInteger max = new AtomicInteger(Integer.MIN_VALUE);
+        AtomicLong max = new AtomicLong(Long.MIN_VALUE);
         Utils.Permutations.iterate(new int[]{0, 1, 2, 3, 4}, 0, permutation -> {
-            int inputValue = 0;
+            long inputValue = 0;
             for (int phase : permutation) {
-                BlockingQueue<Integer> input = new ArrayBlockingQueue<>(2);
-                input.add(phase);
+                BlockingQueue<Long> input = new ArrayBlockingQueue<>(2);
+                input.add((long) phase);
                 input.add(inputValue);
-                BlockingDeque<Integer> output = new LinkedBlockingDeque<>(2);
+                BlockingDeque<Long> output = new LinkedBlockingDeque<>(2);
                 try {
                     executeProgram(input, output);
                     inputValue = output.getLast();
@@ -54,7 +54,7 @@ public class Day7 {
             threads.clear();
             for (int i = 0; i < 5; i++) {
                 BlockingDequeWithMemory queue = new BlockingDequeWithMemory(2);
-                queue.add(permutation[i]);
+                queue.add((long) permutation[i]);
                 queues.add(queue);
                 int amplifierIndex = i;
                 threads.add(new Thread(() -> {
@@ -68,7 +68,7 @@ public class Day7 {
             for (Thread thread : threads) {
                 thread.start();
             }
-            queues.getFirst().add(0);
+            queues.getFirst().add(0L);
             for (Thread thread : threads) {
                 try {
                     thread.join();
@@ -77,7 +77,7 @@ public class Day7 {
                     throw new RuntimeException("Interrupted while waiting for amplifier threads", e);
                 }
             }
-            int finalOutput = queues.getFirst().getLastAddedElement();
+            long finalOutput = queues.getFirst().getLastAddedElement();
             if (finalOutput > max.get()) {
                 max.set(finalOutput);
             }
@@ -85,12 +85,8 @@ public class Day7 {
         return max.get();
     }
 
-    private void executeProgram(BlockingQueue<Integer> input, BlockingQueue<Integer> output) throws InterruptedException {
-        int maxPosition = this.amplifierProgram.stream().mapToInt(i -> i).max().orElseThrow();
-        int[] program = new int[Math.max(maxPosition + 1, this.amplifierProgram.size()) + 4];
-        for (int i = 0; i < this.amplifierProgram.size(); i++) {
-            program[i] = this.amplifierProgram.get(i);
-        }
-        new IntcodeComputer().execute(program, input, output);
+    private void executeProgram(BlockingQueue<Long> input, BlockingQueue<Long> output) throws InterruptedException {
+        Memory<Long> memory = new Memory<>(amplifierProgram, 0L);
+        new IntcodeComputer(false).execute(memory, input, output);
     }
 }

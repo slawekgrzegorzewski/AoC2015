@@ -1,7 +1,6 @@
 package com.adventofcode.y2019;
 
 
-import com.adventofcode.y2019.Day10;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
