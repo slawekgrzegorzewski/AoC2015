@@ -1,5 +1,6 @@
 package com.adventofcode.y2019.input;
 
+import com.adventofcode.y2019.Day10;
 import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
@@ -65,8 +66,19 @@ public class Input {
         return parseProgram("/y2019/day9");
     }
 
-    public static List<String> day10() throws IOException {
-        return getInputFromFile("/y2019/day10");
+    public static Set<Day10.Coordinate> day10() throws IOException {
+        Set<Day10.Coordinate> asteroids = new HashSet<>();
+        List<String> inputFromFile = getInputFromFile("/y2019/day10");
+        for (int j = 0; j < inputFromFile.size(); j++) {
+            String line = inputFromFile.get(j);
+            char[] lineChars = line.toCharArray();
+            for (int i = 0; i < lineChars.length; i++) {
+                if (lineChars[i] == '#') {
+                    asteroids.add(new Day10.Coordinate(i, j));
+                }
+            }
+        }
+        return asteroids;
     }
 
     public static List<String> day11() throws IOException {
