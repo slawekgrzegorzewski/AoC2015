@@ -81,8 +81,8 @@ public class Input {
         return asteroids;
     }
 
-    public static List<String> day11() throws IOException {
-        return getInputFromFile("/y2019/day11");
+    public static List<Long> day11() throws IOException {
+        return parseProgram("/y2019/day11");
     }
 
     public static List<String> day12() throws IOException {
