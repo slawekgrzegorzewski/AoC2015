@@ -85,8 +85,16 @@ public class Input {
         return parseProgram("/y2019/day11");
     }
 
-    public static List<String> day12() throws IOException {
-        return getInputFromFile("/y2019/day12");
+    public static List<int[]> day12() throws IOException {
+        return getInputFromFile("/y2019/day12")
+                .stream()
+                .map(line -> line.substring(1, line.length() - 1))
+                .map(line -> line.split(","))
+                .map(parts -> new int[]{
+                        Integer.parseInt(parts[0].replace("x=", "")),
+                        Integer.parseInt(parts[1].replace(" y=", "")),
+                        Integer.parseInt(parts[2].replace(" z=", ""))})
+                .toList();
     }
 
     public static List<String> day13() throws IOException {

@@ -11,6 +11,24 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 public class Utils {
+    public static long gcd(long a, long b) {
+        a = Math.abs(a);
+        b = Math.abs(b);
+        while (b != 0) {
+            long remainder = a % b;
+            a = b;
+            b = remainder;
+        }
+        return a;
+    }
+
+    public static long lcm(long a, long b) {
+        if (a == 0 || b == 0) {
+            return 0;
+        }
+        return Math.abs(a / gcd(a, b) * b);
+    }
+
     public static List<String> getInputFromFile(String resourceName) throws IOException {
         try (InputStreamReader in = new InputStreamReader(Objects.requireNonNull(Input.class.getResourceAsStream(resourceName))); BufferedReader reader = new BufferedReader(in)) {
             return reader.lines().collect(Collectors.toList());
