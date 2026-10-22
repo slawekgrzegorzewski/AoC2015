@@ -5,6 +5,7 @@ public class ReadInputCommand extends Command {
         Memory<Long> memory = commandInput.memory();
         long instructionPointer = commandInput.instructionPointer();
         long firstParameter = getValueForJump(commandInput.memory(), instructionPointer , 1, commandInput.relativeBase());
+        commandInput.onInputRequested().run();
         Long take = commandInput.input().take();
         if (commandInput.debug()) {
             System.out.println("At " + commandInput.instructionPointer() + ": ReadInputCommand: " + commandInput.memory().get(commandInput.instructionPointer()));

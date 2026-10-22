@@ -4,6 +4,7 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
@@ -12,6 +13,7 @@ public class BlockingDequeWithMemory implements BlockingDeque<Long> {
     private final BlockingDeque<Long> deque;
 
     private long lastAddedElement;
+    private final BlockingDeque<Long> history = new LinkedBlockingDeque<>();
 
     public long getLastAddedElement() {
         return lastAddedElement;
@@ -24,24 +26,28 @@ public class BlockingDequeWithMemory implements BlockingDeque<Long> {
     @Override
     public void addFirst(@NonNull Long element) {
         deque.addFirst(element);
+        history.addFirst(element);
         lastAddedElement = element;
     }
 
     @Override
     public void addLast(@NonNull Long element) {
         deque.addLast(element);
+        history.addLast(element);
         lastAddedElement = element;
     }
 
     @Override
     public boolean offerFirst(@NonNull Long element) {
         lastAddedElement = element;
+        history.offerFirst(element);
         return deque.offerFirst(element);
     }
 
     @Override
     public boolean offerLast(@NonNull Long element) {
         lastAddedElement = element;
+        history.offerLast(element);
         return deque.offerLast(element);
     }
 
@@ -49,23 +55,27 @@ public class BlockingDequeWithMemory implements BlockingDeque<Long> {
     public void putFirst(@NonNull Long element) throws InterruptedException {
         lastAddedElement = element;
         deque.putFirst(element);
+        history.putFirst(element);
     }
 
     @Override
     public void putLast(@NonNull Long element) throws InterruptedException {
         lastAddedElement = element;
         deque.putLast(element);
+        history.putLast(element);
     }
 
     @Override
     public boolean offerFirst(@NonNull Long element, long timeout, TimeUnit unit) throws InterruptedException {
         lastAddedElement = element;
+        history.offerFirst(element);
         return deque.offerFirst(element, timeout, unit);
     }
 
     @Override
     public boolean offerLast(@NonNull Long element, long timeout, TimeUnit unit) throws InterruptedException {
         lastAddedElement = element;
+        history.offerLast(element);
         return deque.offerLast(element, timeout, unit);
     }
 
@@ -142,12 +152,14 @@ public class BlockingDequeWithMemory implements BlockingDeque<Long> {
     @Override
     public boolean add(@NonNull Long element) {
         lastAddedElement = element;
+        history.add(element);
         return deque.add(element);
     }
 
     @Override
     public boolean offer(@NonNull Long element) {
         lastAddedElement = element;
+        history.offer(element);
         return deque.offer(element);
     }
 
@@ -155,11 +167,13 @@ public class BlockingDequeWithMemory implements BlockingDeque<Long> {
     public void put(@NonNull Long element) throws InterruptedException {
         lastAddedElement = element;
         deque.put(element);
+        history.put(element);
     }
 
     @Override
     public boolean offer(@NonNull Long element, long timeout, @NonNull TimeUnit unit) throws InterruptedException {
         lastAddedElement = element;
+        history.offer(element);
         return deque.offer(element, timeout, unit);
     }
 
@@ -212,6 +226,7 @@ public class BlockingDequeWithMemory implements BlockingDeque<Long> {
     public void push(@NonNull Long element) {
         lastAddedElement = element;
         deque.push(element);
+        history.push(element);
     }
 
     @Override
@@ -282,5 +297,10 @@ public class BlockingDequeWithMemory implements BlockingDeque<Long> {
     @Override
     public void clear() {
         deque.clear();
+        history.clear();
+    }
+
+    public List<Long> getHistory() {
+        return history.stream().toList();
     }
 }

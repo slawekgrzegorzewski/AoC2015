@@ -7,5 +7,7 @@ public record CommandInput(Memory<Long> memory,
                            long relativeBase,
                            BlockingQueue<Long> input,
                            BlockingQueue<Long> output,
-                           boolean debug) {
+                           boolean debug,
+                           Runnable onInputRequested,
+                           Runnable onOutput) {
 }

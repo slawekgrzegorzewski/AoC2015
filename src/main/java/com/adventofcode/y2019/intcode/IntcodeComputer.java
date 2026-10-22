@@ -13,11 +13,17 @@ public class IntcodeComputer {
     }
 
     public ProgramResult execute(Memory<Long> memory, BlockingQueue<Long> input, BlockingQueue<Long> output) throws InterruptedException {
+        return execute(memory, input, output, () -> {
+        }, () -> {
+        });
+    }
+
+    public ProgramResult execute(Memory<Long> memory, BlockingQueue<Long> input, BlockingQueue<Long> output, Runnable onInputRequested, Runnable onOutput) throws InterruptedException {
         long instructionPointer = 0;
         long relativeBase = 0;
         while (true) {
             Command command = CommandFactory.getCommand(Math.toIntExact(memory.get(instructionPointer)));
-            CommandResult commandResult = command.execute(new CommandInput(memory, instructionPointer, relativeBase, input, output, debug));
+            CommandResult commandResult = command.execute(new CommandInput(memory, instructionPointer, relativeBase, input, output, debug, onInputRequested, onOutput));
             instructionPointer += commandResult.pointerMove();
             relativeBase = commandResult.relativeBase();
             if (command.isEnd()) {

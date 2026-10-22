@@ -10,11 +10,9 @@ import java.util.List;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.LinkedBlockingQueue;
 
 public class Day9 {
     private final List<Long> program;
-
 
     public Day9() throws IOException {
         this.program = Input.day9();
