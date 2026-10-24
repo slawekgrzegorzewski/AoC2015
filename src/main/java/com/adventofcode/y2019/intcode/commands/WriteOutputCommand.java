@@ -13,8 +13,7 @@ public class WriteOutputCommand extends Command {
             System.out.println("\tFirst value: " + firstParameter);
             System.out.println("\tOutput value: " + firstParameter);
         }
-        commandInput.onOutput().run();
-        commandInput.output().put(firstParameter);
+        commandInput.output().accept(firstParameter);
         return new CommandResult(2, commandInput.relativeBase());
     }
 

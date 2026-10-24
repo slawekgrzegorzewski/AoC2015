@@ -100,7 +100,21 @@ public class Day11 {
 
     private void executeProgram(BlockingDeque<Long> input, BlockingDeque<Long> output) throws InterruptedException {
         Memory<Long> memory = new Memory<>(program, 0L);
-        new IntcodeComputer(false).execute(memory, input, output);
+        new IntcodeComputer(false).execute(memory,
+                () -> {
+                    try {
+                        return input.take();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                (value) -> {
+                    try {
+                        output.put(value);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
     }
 
     public record Coordinate(int x, int y) {
