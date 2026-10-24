@@ -2,7 +2,8 @@ package com.adventofcode.y2019.intcode;
 
 import com.adventofcode.y2019.intcode.commands.*;
 
-import java.util.concurrent.BlockingQueue;
+import java.util.function.LongConsumer;
+import java.util.function.LongSupplier;
 
 public class IntcodeComputer {
 
@@ -12,18 +13,12 @@ public class IntcodeComputer {
         this.debug = debug;
     }
 
-    public ProgramResult execute(Memory<Long> memory, BlockingQueue<Long> input, BlockingQueue<Long> output) throws InterruptedException {
-        return execute(memory, input, output, () -> {
-        }, () -> {
-        });
-    }
-
-    public ProgramResult execute(Memory<Long> memory, BlockingQueue<Long> input, BlockingQueue<Long> output, Runnable onInputRequested, Runnable onOutput) throws InterruptedException {
+    public ProgramResult execute(Memory<Long> memory, LongSupplier input, LongConsumer output) throws InterruptedException {
         long instructionPointer = 0;
         long relativeBase = 0;
         while (true) {
             Command command = CommandFactory.getCommand(Math.toIntExact(memory.get(instructionPointer)));
-            CommandResult commandResult = command.execute(new CommandInput(memory, instructionPointer, relativeBase, input, output, debug, onInputRequested, onOutput));
+            CommandResult commandResult = command.execute(new CommandInput(memory, instructionPointer, relativeBase, input, output, debug));
             instructionPointer += commandResult.pointerMove();
             relativeBase = commandResult.relativeBase();
             if (command.isEnd()) {

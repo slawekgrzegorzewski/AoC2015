@@ -87,6 +87,21 @@ public class Day7 {
 
     private void executeProgram(BlockingQueue<Long> input, BlockingQueue<Long> output) throws InterruptedException {
         Memory<Long> memory = new Memory<>(amplifierProgram, 0L);
-        new IntcodeComputer(false).execute(memory, input, output);
+        new IntcodeComputer(false).execute(
+                memory,
+                () -> {
+                    try {
+                        return input.take();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                (value) -> {
+                    try {
+                        output.put(value);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
     }
 }

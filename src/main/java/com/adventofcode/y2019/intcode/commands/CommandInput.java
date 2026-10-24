@@ -1,13 +1,12 @@
 package com.adventofcode.y2019.intcode.commands;
 
-import java.util.concurrent.BlockingQueue;
+import java.util.function.LongConsumer;
+import java.util.function.LongSupplier;
 
 public record CommandInput(Memory<Long> memory,
                            long instructionPointer,
                            long relativeBase,
-                           BlockingQueue<Long> input,
-                           BlockingQueue<Long> output,
-                           boolean debug,
-                           Runnable onInputRequested,
-                           Runnable onOutput) {
+                           LongSupplier input,
+                           LongConsumer output,
+                           boolean debug) {
 }
