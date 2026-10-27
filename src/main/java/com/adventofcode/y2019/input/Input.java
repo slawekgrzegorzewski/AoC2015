@@ -1,6 +1,7 @@
 package com.adventofcode.y2019.input;
 
 import com.adventofcode.y2019.Day10;
+import com.adventofcode.y2019.Day14;
 import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
@@ -101,8 +102,12 @@ public class Input {
         return parseProgram("/y2019/day13");
     }
 
-    public static List<String> day14() throws IOException {
-        return getInputFromFile("/y2019/day14");
+    public static List<Day14.Reaction> day14() throws IOException {
+        Map<String, Integer> chemicalIdMap = new HashMap<>();
+        return getInputFromFile("/y2019/day14")
+                .stream()
+                .map(line -> Day14.Reaction.parse(line, chemicalIdMap))
+                .toList();
     }
 
     public static List<String> day15() throws IOException {
