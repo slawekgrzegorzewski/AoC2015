@@ -110,8 +110,8 @@ public class Input {
                 .toList();
     }
 
-    public static List<String> day15() throws IOException {
-        return getInputFromFile("/y2019/day15");
+    public static List<Long> day15() throws IOException {
+        return parseProgram("/y2019/day15");
     }
 
     public static List<String> day16() throws IOException {
