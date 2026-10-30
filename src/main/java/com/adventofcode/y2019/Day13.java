@@ -37,14 +37,14 @@ public class Day13 {
     }
 
     long part2() throws InterruptedException {
-        GameState gameState = new GameState();
+        Game game = new Game();
         Memory<Long> memory = new Memory<>(program, 0L);
         memory.set(0, 2L);
         executeProgram(
                 memory,
-                gameState::input,
-                gameState::output);
-        return gameState.score;
+                game::input,
+                game::output);
+        return game.score;
     }
 
     private void executeProgram(Memory<Long> memory, LongSupplier input, LongConsumer output) {
@@ -58,7 +58,7 @@ public class Day13 {
     private record Coordinate(int x, int y) {
     }
 
-    private static final class GameState {
+    private static final class Game {
         private final int[] command = new int[3];
         int commandIndex = 0;
         int score;
