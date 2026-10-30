@@ -114,8 +114,11 @@ public class Input {
         return parseProgram("/y2019/day15");
     }
 
-    public static List<String> day16() throws IOException {
-        return getInputFromFile("/y2019/day16");
+    public static int[] day16() throws IOException {
+        String line = getInputFromFile("/y2019/day16").getFirst();
+        return line.chars()
+                .map(c -> c - '0')
+                .toArray();
     }
 
     public static List<String> day17() throws IOException {
