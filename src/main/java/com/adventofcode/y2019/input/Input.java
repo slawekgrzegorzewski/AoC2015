@@ -121,8 +121,8 @@ public class Input {
                 .toArray();
     }
 
-    public static List<String> day17() throws IOException {
-        return getInputFromFile("/y2019/day17");
+    public static List<Long> day17() throws IOException {
+        return parseProgram("/y2019/day17");
     }
 
     public static List<String> day18() throws IOException {
